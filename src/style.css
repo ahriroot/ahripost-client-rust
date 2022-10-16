@@ -1,0 +1,73 @@
+* {
+    padding: 0;
+    margin: 0;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.n-tabs-nav-scroll-content {
+    background-color: #21252b !important;
+}
+
+.n-tabs-tab--active {
+    background: #282c34 !important;
+    border-bottom: none;
+}
+
+.n-tabs-bar {
+    background-color: #282c34 !important;
+}
+
+.n-tabs-tab__label {
+    color: #d7d8d9;
+}
+
+.n-tabs-tab-pad {
+    --n-tab-gap: 2px;
+    background: rgb(22, 22, 22);
+}
+
+.n-tabs {
+    height: 100%;
+}
+
+.n-tab-pane {
+    height: 100%;
+}
+
+body {
+    background-color: #333842;
+    width: 100vw;
+    height: 100vh;
+
+}
+
+#app {
+    width: 100vw;
+    height: 100vh;
+}
+
+/* 禁止复制 */
+.nocopy {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* 允许复制 */
+.copy {
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+}
+
+.container {
+    margin: 0;
+    padding-top: 10vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}

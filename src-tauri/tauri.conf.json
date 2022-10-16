@@ -1,0 +1,86 @@
+{
+    "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+    "build": {
+        "beforeDevCommand": "yarn dev",
+        "beforeBuildCommand": "yarn build",
+        "devPath": "http://localhost:1420",
+        "distDir": "../dist",
+        "withGlobalTauri": false
+    },
+    "package": {
+        "productName": "AhriPost",
+        "version": "0.1.0"
+    },
+    "tauri": {
+        "allowlist": {
+            "all": true
+        },
+        "bundle": {
+            "active": true,
+            "category": "DeveloperTool",
+            "copyright": "© 2022 ahriknow",
+            "externalBin": [],
+            "icon": [
+                "icons/32x32.png",
+                "icons/128x128.png",
+                "icons/128x128@2x.png",
+                "icons/icon.icns",
+                "icons/icon.ico"
+            ],
+            "identifier": "com.ahriknow.post",
+            "longDescription": "开源接口调试工具、在线文档 / Open source api test tool. Api docs online.",
+            "macOS": {
+                "entitlements": null,
+                "exceptionDomain": "",
+                "frameworks": [],
+                "providerShortName": null,
+                "signingIdentity": null
+            },
+            "resources": [],
+            "shortDescription": "开源接口调试工具",
+            "targets": "all",
+            "windows": {
+                "certificateThumbprint": null,
+                "digestAlgorithm": "sha256",
+                "timestampUrl": "",
+                "wix": {
+                    "language": [
+                        "zh-CN",
+                        "en-US"
+                    ]
+                }
+            },
+            "appimage": {
+                "bundleMediaFramework": false
+            },
+            "deb": {
+                "depends": []
+            }
+        },
+        "security": {
+            "csp": null
+        },
+        "updater": {
+            "active": false
+        },
+        "windows": [
+            {
+                "fullscreen": false,
+                "height": 768,
+                "resizable": true,
+                "title": "AhriPost",
+                "width": 1366,
+                "center": true,
+                "visible": false
+            },
+            {
+                "width": 400,
+                "height": 200,
+                "decorations": false,
+                "url": "splashscreen.html",
+                "label": "splashscreen",
+                "center": true
+            }
+        ]
+    }
+}
