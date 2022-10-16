@@ -12,6 +12,7 @@ import { ArrowForward, Add, CloseOutline, Settings } from '@vicons/ionicons5'
 import { invoke } from '@tauri-apps/api/tauri'
 import { useIndexStore } from '@/store'
 import { useI18n } from 'vue-i18n'
+import ProjectVue from '@/components/Project.vue'
 
 const store = useIndexStore()
 const showSetting = ref(false)
@@ -21,6 +22,17 @@ const languages = shallowRef<{ [x: string]: any }>({
     'zh-CN': zhCN,
     'en-US': enUS
 })
+const tree = shallowRef<{ [x: string]: any }>({
+    project: ProjectVue
+})
+const projects = ref<{ [x: string]: any }[]>([
+    {
+        id: '1',
+        name: 'Project 1',
+        type: 'project',
+    }
+])
+const tabs = ref<{ [x: string]: any }[]>([])
 
 const handleShowSide = async () => {
     showSide.value = !showSide.value
@@ -33,6 +45,11 @@ const handleShowSide = async () => {
 const handleCloseTab = async (event: Event, id: number) => {
     event.stopPropagation()
     console.log(id)
+}
+
+const handleNewProject = async () => {
+    const result = await invoke('new_project')
+    console.log(result)
 }
 
 onBeforeMount(async () => {
@@ -138,6 +155,15 @@ onMounted(async () => {
                                 <div class="conn">
                                     <n-layout position="absolute" style="background: #21252b; color: #fff"
                                         :native-scrollbar="false" content-style="padding: 10px;">
+                                        <n-button secondary size="small" style="width: 100%"
+                                            @click.stop="handleNewProject">
+                                            <template #icon>
+                                                <n-icon>
+                                                    <add />
+                                                </n-icon>
+                                            </template>
+                                        </n-button>
+                                        <component v-for="project in projects" :is="tree[project.type]" :project="project" />
                                     </n-layout>
                                 </div>
                                 <div class="btn-side">
@@ -151,11 +177,11 @@ onMounted(async () => {
                                     <n-tabs closable :tab-style="{
                                         padding: '6px 10px',
                                     }">
-                                        <n-tab-pane name="chap1">
+                                        <n-tab-pane name="chap1" v-for="tab in tabs">
                                             <template #tab>
                                                 <div
                                                     style="display: flex; justify-content: center; align-items: center;">
-                                                    <span>第一章第一章</span>
+                                                    <span>{{ tab.name }}</span>
                                                     <n-button circle quaternary size="small"
                                                         style="height: 20px; width: 20px; margin-left: 10px;"
                                                         @click="handleCloseTab($event, 1)">
@@ -173,14 +199,7 @@ onMounted(async () => {
                                             SEV 2 级别的故障！需要所有的人马上协助！“我们组的应用全挂掉了。<br><br>
                                             当我还在费力的寻找修复方法的时候，忽然闻到隔壁房间的的焦味，防火报警器开始鸣叫。
                                         </n-tab-pane>
-                                        <n-tab-pane name="chap2" tab="第二章">
-                                            “威尔！着火了！快来帮忙！”我听到女朋友大喊。现在一个难题在我面前——是恢复一个重要的
-                                            Amazon 服务，还是救公寓的火。<br><br>
-                                            我的脑海中忽然出现了 Amazon
-                                            著名的领导力准则”客户至上“，有很多的客户还依赖我们的服务，我不能让他们失望！所以着火也不管了，女朋友喊我也无所谓，我开始
-                                            debug 这个线上问题。
-                                        </n-tab-pane>
-                                        <n-tab-pane name="chap3" tab="第三章">
+                                        <!-- <n-tab-pane name="chap3" tab="第三章">
                                             <div style=" height: 100%;position: relative;">
                                                 <NH2>123</NH2>
                                                 <NH2>123</NH2>
@@ -215,7 +234,7 @@ onMounted(async () => {
                                                 <NH2>123</NH2>
                                                 <NH2>123</NH2>
                                             </div>
-                                        </n-tab-pane>
+                                        </n-tab-pane> -->
                                     </n-tabs>
                                 </section>
                             </div>
