@@ -13,6 +13,9 @@ import { invoke } from '@tauri-apps/api/tauri'
 import { useIndexStore } from '@/store'
 import { useI18n } from 'vue-i18n'
 import ProjectVue from '@/components/Project.vue'
+import Project from '@/models/Project'
+import { nanoid } from 'nanoid'
+
 
 const store = useIndexStore()
 const showSetting = ref(false)
@@ -25,13 +28,7 @@ const languages = shallowRef<{ [x: string]: any }>({
 const tree = shallowRef<{ [x: string]: any }>({
     project: ProjectVue
 })
-const projects = ref<{ [x: string]: any }[]>([
-    {
-        id: '1',
-        name: 'Project 1',
-        type: 'project',
-    }
-])
+const projects = ref<{ [x: string]: any }[]>([])
 const tabs = ref<{ [x: string]: any }[]>([])
 
 const handleShowSide = async () => {
@@ -47,9 +44,17 @@ const handleCloseTab = async (event: Event, id: number) => {
     console.log(id)
 }
 
+const handleLoadProjects = async () => {
+    projects.value = await Project.all()
+}
+
 const handleNewProject = async () => {
-    const result = await invoke('new_project')
-    console.log(result)
+    let project = new Project()
+    project.key = nanoid()
+    project.name = 'Project Name'
+    project.create_at = Date.now()
+    project.save()
+    await handleLoadProjects()
 }
 
 onBeforeMount(async () => {
@@ -71,6 +76,7 @@ onBeforeMount(async () => {
         width.value = store.config.sideBarWidth
         oldWidth.value = width.value
     } catch { }
+    await handleLoadProjects()
 })
 
 const sidebarRef = shallowRef<HTMLElement | null>(null)
@@ -150,20 +156,18 @@ onMounted(async () => {
                             :style="`cursor: ${resizeable ? 'ew-resize' : cursor}`">
                             <div class="connection" ref="sidebarRef" :style="`width: ${width}px`">
                                 <div class="header">
-                                    123
+                                    <n-button secondary size="small" @click.stop="handleNewProject">
+                                        <template #icon>
+                                            <n-icon>
+                                                <add />
+                                            </n-icon>
+                                        </template>
+                                    </n-button>
                                 </div>
                                 <div class="conn">
                                     <n-layout position="absolute" style="background: #21252b; color: #fff"
                                         :native-scrollbar="false" content-style="padding: 10px;">
-                                        <n-button secondary size="small" style="width: 100%"
-                                            @click.stop="handleNewProject">
-                                            <template #icon>
-                                                <n-icon>
-                                                    <add />
-                                                </n-icon>
-                                            </template>
-                                        </n-button>
-                                        <component v-for="project in projects" :is="tree[project.type]" :project="project" />
+                                        <component v-for="project in projects" :is="ProjectVue" :project="project" />
                                     </n-layout>
                                 </div>
                                 <div class="btn-side">

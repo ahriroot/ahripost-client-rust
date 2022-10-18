@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid'
 
 import { TreeRenderProps } from 'naive-ui/es/tree/src/interface'
 import AInput from './AInput.vue'
+import Item from '@/models/Item'
 
 const props = defineProps<{
     project: any
@@ -54,7 +55,7 @@ const nodeProps = ({ option }: { option: any }): any => {
         onContextmenu(e: MouseEvent): void {
             e.preventDefault()
             e.stopPropagation()
-            if (option.type == 'folder') {
+            if (option.type == 'folder' || option.type == 'project') {
                 optionsContextmenu.value = [
                     {
                         label: 'Create Api',
@@ -66,17 +67,28 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 }
                                 if (defaultExpandedKeys.value.indexOf(option.key as string) == -1) {
                                     defaultExpandedKeys.value.push(option.key)
+                                    setTimeout(() => {
+                                        option.children.push({
+                                            key: nanoid(),
+                                            label: 'New Api',
+                                            type: 'api',
+                                            isLeaf: true,
+                                            edit: true,
+                                            prefix: () => h(NIcon, null, { default: () => h(CodeWorkingOutline) }),
+                                            children: []
+                                        })
+                                    }, 100);
+                                } else {
+                                    option.children.push({
+                                        key: nanoid(),
+                                        label: 'New Api',
+                                        type: 'api',
+                                        isLeaf: true,
+                                        edit: true,
+                                        prefix: () => h(NIcon, null, { default: () => h(CodeWorkingOutline) }),
+                                        children: []
+                                    })
                                 }
-                                option.children.push({
-                                    key: nanoid(),
-                                    label: 'New Api',
-                                    value: 'New Api',
-                                    type: 'api',
-                                    edit: true,
-                                    prefix: () => h(NIcon, null, { default: () => h(CodeWorkingOutline) }),
-                                    children: []
-                                })
-                                console.log(option)
                                 showContextmenu.value = false
                             }
                         }
@@ -89,19 +101,36 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 if (!Array.isArray(option.children)) {
                                     option.children = []
                                 }
+                                let key = nanoid()
+                                let label = 'New Folder'
                                 if (defaultExpandedKeys.value.indexOf(option.key as string) == -1) {
                                     defaultExpandedKeys.value.push(option.key)
+                                    setTimeout(() => {
+                                        option.children.push({
+                                            key: key,
+                                            label: label,
+                                            type: 'folder',
+                                            edit: true,
+                                            prefix: () => h(NIcon, null, { default: () => h(FolderOutline) }),
+                                            children: []
+                                        })
+                                    }, 100);
+                                } else {
+                                    option.children.push({
+                                        key: key,
+                                        label: label,
+                                        type: 'folder',
+                                        edit: true,
+                                        prefix: () => h(NIcon, null, { default: () => h(FolderOutline) }),
+                                        children: []
+                                    })
                                 }
-                                option.children.push({
-                                    key: nanoid(),
-                                    label: 'New Folder',
-                                    value: 'New Folder',
-                                    type: 'folder',
-                                    edit: true,
-                                    prefix: () => h(NIcon, null, { default: () => h(FolderOutline) }),
-                                    children: []
-                                })
-                                console.log(option)
+                                let item = new Item()
+                                item.key = key
+                                item.label = label
+                                item.type = 'folder'
+                                item.project = props.project.id
+                                item.parent = option.type == 'project' ? 0 : option.id
                                 showContextmenu.value = false
                             }
                         }
@@ -162,10 +191,8 @@ const nodeProps = ({ option }: { option: any }): any => {
 const data = ref<TreeOption[]>([{
     key: `project:${props.project.id}`,
     label: props.project.name,
-    value: props.project.name,
-    type: 'folder',
+    type: 'project',
     edit: false,
-    prefix: () => h(NIcon, null, { default: () => h(FolderOutline) }),
     children: []
 }])
 </script>
