@@ -1,6 +1,4 @@
 <script setup lang="ts">
-// This starter template is using Vue 3 <script setup> SFCs
-// Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
 import { onBeforeMount, onMounted, shallowRef, ref } from 'vue'
 import {
     darkTheme, NConfigProvider, NGlobalStyle, NIcon, NLayout,
@@ -15,16 +13,14 @@ import { useI18n } from 'vue-i18n'
 import ProjectVue from '@/components/Project.vue'
 import Project from '@/models/Project'
 import { nanoid } from 'nanoid'
+import tauriConfig from '../src-tauri/tauri.conf.json'
+import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
+import { relaunch } from '@tauri-apps/api/process'
 
 
 const store = useIndexStore()
-const showSetting = ref(false)
 const { t, locale } = useI18n()
 const showSide = ref<boolean>(true)  // 显示侧边栏
-const languages = shallowRef<{ [x: string]: any }>({
-    'zh-CN': zhCN,
-    'en-US': enUS
-})
 const tree = shallowRef<{ [x: string]: any }>({
     project: ProjectVue
 })
@@ -39,6 +35,66 @@ const handleShowSide = async () => {
     })
 }
 
+// =========== SETTING MODAL START ===========
+const langs = ref([
+    { label: '简体中文', value: 'zh-CN' },
+    { label: 'English', value: 'en-US' }
+])
+const languages = ref<{ [x: string]: any }>({
+    'zh-CN': zhCN,
+    'en-US': enUS
+})
+const handleUpdateLang = async (_: string) => {
+    store.updateConfig({
+        ...store.config,
+        lang: locale.value
+    })
+}
+
+const showSetting = ref(false)
+const handleCheckedChange = async (val: boolean) => {
+    store.updateConfig({
+        ...store.config,
+        deleteNoConfirm: val
+    })
+}
+
+const loadingClear = ref(false)
+const handleClearAllData = async () => {
+    loadingClear.value = true
+    localStorage.clear()
+    setTimeout(() => {
+        loadingClear.value = false
+    }, 1000)
+}
+
+const showUpdateInfo = ref(false)
+const updateStatus = ref<any>(null)
+const updateLoading = ref(false)
+const handleUpdate = async () => {
+    try {
+        const { shouldUpdate, manifest } = await checkUpdate()
+        if (shouldUpdate) {
+            updateStatus.value = manifest
+            showUpdateInfo.value = true
+        } else {
+            alert('当前已是最新版本')
+        }
+    } catch (error) {
+        console.log(error)
+    }
+}
+const handleStartUpdate = async () => {
+    updateLoading.value = true
+    await installUpdate()
+    await relaunch()
+    updateLoading.value = false
+}
+const handleCancelUpdate = () => {
+    showUpdateInfo.value = false
+}
+// =========== SETTING MODAL END ===========
+
 const handleCloseTab = async (event: Event, id: number) => {
     event.stopPropagation()
     console.log(id)
@@ -48,13 +104,22 @@ const handleLoadProjects = async () => {
     projects.value = await Project.all()
 }
 
+const showNewProject = ref(false)
+const newProjectName = ref('')
+const loadingNewProject = ref(false)
 const handleNewProject = async () => {
+    let name = newProjectName.value.trim()
+    if (name == '') {
+        window.$message.error(t('common.null'))
+        return
+    }
     let project = new Project()
     project.key = nanoid()
-    project.name = 'Project Name'
+    project.name = newProjectName.value
     project.create_at = Date.now()
     project.save()
     await handleLoadProjects()
+    showNewProject.value = false
 }
 
 onBeforeMount(async () => {
@@ -140,6 +205,55 @@ onMounted(async () => {
         <n-loading-bar-provider>
             <n-message-provider>
                 <n-dialog-provider>
+
+                    <n-modal v-model:show="showUpdateInfo" preset="card" style="width: 600px;" :title="t('update.title')"
+                        size="small">
+                        <h1>Version: {{updateStatus.version}}</h1>
+                        <br>
+                        <p>Info: {{updateStatus.body}}</p>
+                        <br>
+                        <p>Publish Date: {{updateStatus.date}}</p>
+                        <br>
+                        <n-button size="small" @click="handleStartUpdate" :loading="updateLoading">Install</n-button>
+                        &nbsp;
+                        <n-button size="small" @click="handleCancelUpdate">{{t('common.cancel')}}</n-button>
+                    </n-modal>
+
+                    <n-modal v-model:show="showSetting" preset="card" style="width: 600px;" :title="t('setting.title')"
+                        size="small">
+                        <n-select size="small" v-model:value="locale" :options="langs"
+                            @update:value="handleUpdateLang" />
+                        <br>
+                        <n-checkbox :checked="store.config?.deleteNoConfirm" @update:checked="handleCheckedChange">
+                            {{ t('copywriting.noConfirmationForDeletion') }}
+                        </n-checkbox>
+                        <br>
+                        <br>
+                        <n-button :loading="loadingClear" size="small" @click="handleClearAllData">
+                            {{ t('copywriting.clearCache') }}
+                        </n-button>
+                        <br>
+                        <br>
+                        <n-button :loading="updateLoading" size="small" @click="handleUpdate">
+                            {{ t('copywriting.checkUpdate') }}
+                        </n-button>
+                        <br>
+                        <br>
+                        <div>Version: {{tauriConfig.package.version}}</div>
+                    </n-modal>
+
+                    <n-modal v-model:show="showNewProject" preset="card" style="width: 600px;" :title="t('project.new')"
+                        size="small">
+                        <n-space vertical>
+                            <n-input v-model:value="newProjectName" type="text" :placeholder="t('project.name')"
+                                :disabled="loadingNewProject" />
+                            <n-button secondary size="small" @click.stop="handleNewProject"
+                                :loading="loadingNewProject">
+                                {{ t('common.confirm') }}
+                            </n-button>
+                        </n-space>
+                    </n-modal>
+
                     <div id="main" class="nocopy">
                         <aside class="side nocopy" :class="store.config?.showSideBar ? '' : 'show'">
                             <div class="sidebar">
@@ -156,7 +270,7 @@ onMounted(async () => {
                             :style="`cursor: ${resizeable ? 'ew-resize' : cursor}`">
                             <div class="connection" ref="sidebarRef" :style="`width: ${width}px`">
                                 <div class="header">
-                                    <n-button secondary size="small" @click.stop="handleNewProject">
+                                    <n-button secondary size="small" @click.stop="showNewProject = true">
                                         <template #icon>
                                             <n-icon>
                                                 <add />

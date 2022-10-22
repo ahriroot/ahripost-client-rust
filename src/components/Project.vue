@@ -7,6 +7,9 @@ import { nanoid } from 'nanoid'
 import { TreeRenderProps } from 'naive-ui/es/tree/src/interface'
 import AInput from './AInput.vue'
 import Item from '@/models/Item'
+import { useMessage } from 'naive-ui'
+
+window.$message = useMessage()
 
 const props = defineProps<{
     project: any

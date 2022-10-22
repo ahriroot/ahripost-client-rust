@@ -8,6 +8,7 @@
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "p": "tauri plugin init --name",
     "key": "tauri signer generate -w cert/ahripost.key"
   },
   "dependencies": {
