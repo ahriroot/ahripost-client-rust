@@ -1,15 +1,9 @@
-import { BaseModel, IORMConfigStore } from "iorm"
+import { DB } from "iorm"
 
-class DB extends BaseModel {
-    constructor(store: IORMConfigStore | null = null) {
-        super({
-            db: {
-                db_name: 'ahripost',
-                db_version: 1
-            },
-            store: store
-        })
-    }
-}
+let db = new DB({
+    name: 'dbname',
+    version: 1,
+})
+// let db = null
 
-export default DB
+export default db

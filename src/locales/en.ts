@@ -4,6 +4,7 @@ const en = {
         submit: 'Submit',
         cancel: 'Cancel',
         confirm: 'Confirm',
+        delete: 'Delete',
     },
     project: {
         new: 'New Project',
@@ -15,7 +16,14 @@ const en = {
     update: {
         title: 'Update',
     },
+    itemTree: {
+        createFolder: 'New Folder',
+        createApi: 'New Api',
+        rename: 'Rename',
+    },
     copywriting: {
+        deleteFolder: 'Delete Folder',
+        deleteApi: 'Delete Api',
         clearCache: 'Clear Cache',
         checkUpdate: 'Check Update',
         noConfirmationForDeletion: 'No confirmation for deletion',

@@ -55,14 +55,6 @@ body {
     user-select: none;
 }
 
-/* 允许复制 */
-.copy {
-    -webkit-user-select: auto;
-    -moz-user-select: auto;
-    -ms-user-select: auto;
-    user-select: auto;
-}
-
 .container {
     margin: 0;
     padding-top: 10vh;

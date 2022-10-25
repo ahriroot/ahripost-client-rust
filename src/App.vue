@@ -12,10 +12,12 @@ import { useIndexStore } from '@/store'
 import { useI18n } from 'vue-i18n'
 import ProjectVue from '@/components/Project.vue'
 import Project from '@/models/Project'
+import Item from '@/models/Item'
 import { nanoid } from 'nanoid'
 import tauriConfig from '../src-tauri/tauri.conf.json'
 import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
 import { relaunch } from '@tauri-apps/api/process'
+import create from './models'
 
 
 const store = useIndexStore()
@@ -102,10 +104,11 @@ const handleCloseTab = async (event: Event, id: number) => {
 
 const handleLoadProjects = async () => {
     projects.value = await Project.all()
+    await Item.all()
 }
 
 const showNewProject = ref(false)
-const newProjectName = ref('')
+const newProjectName = ref('New Project')
 const loadingNewProject = ref(false)
 const handleNewProject = async () => {
     let name = newProjectName.value.trim()
@@ -123,6 +126,7 @@ const handleNewProject = async () => {
 }
 
 onBeforeMount(async () => {
+    await create()
     try {
         let config = localStorage.getItem('config')
         if (config) {
@@ -206,17 +210,17 @@ onMounted(async () => {
             <n-message-provider>
                 <n-dialog-provider>
 
-                    <n-modal v-model:show="showUpdateInfo" preset="card" style="width: 600px;" :title="t('update.title')"
-                        size="small">
-                        <h1>Version: {{updateStatus.version}}</h1>
+                    <n-modal v-model:show="showUpdateInfo" preset="card" style="width: 600px;"
+                        :title="t('update.title')" size="small">
+                        <h1>Version: {{ updateStatus.version }}</h1>
                         <br>
-                        <p>Info: {{updateStatus.body}}</p>
+                        <p>Info: {{ updateStatus.body }}</p>
                         <br>
-                        <p>Publish Date: {{updateStatus.date}}</p>
+                        <p>Publish Date: {{ updateStatus.date }}</p>
                         <br>
                         <n-button size="small" @click="handleStartUpdate" :loading="updateLoading">Install</n-button>
                         &nbsp;
-                        <n-button size="small" @click="handleCancelUpdate">{{t('common.cancel')}}</n-button>
+                        <n-button size="small" @click="handleCancelUpdate">{{ t('common.cancel') }}</n-button>
                     </n-modal>
 
                     <n-modal v-model:show="showSetting" preset="card" style="width: 600px;" :title="t('setting.title')"
@@ -239,7 +243,7 @@ onMounted(async () => {
                         </n-button>
                         <br>
                         <br>
-                        <div>Version: {{tauriConfig.package.version}}</div>
+                        <div>Version: {{ tauriConfig.package.version }}</div>
                     </n-modal>
 
                     <n-modal v-model:show="showNewProject" preset="card" style="width: 600px;" :title="t('project.new')"

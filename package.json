@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^1.1.0",
-    "iorm": "^0.0.11",
+    "iorm": "0.0.16",
     "nanoid": "^4.0.0",
     "pinia": "^2.0.23",
     "vue": "^3.2.37",
@@ -21,13 +21,13 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.1.0",
-    "@types/node": "^18.7.10",
+    "@types/node": "^18.11.4",
     "@vicons/ionicons5": "^0.12.0",
     "@vitejs/plugin-vue": "^3.0.1",
     "naive-ui": "^2.33.5",
     "typescript": "^4.6.4",
     "vfonts": "^0.0.3",
     "vite": "^3.0.2",
-    "vue-tsc": "^1.0.8"
+    "vue-tsc": "^1.0.9"
   }
 }
