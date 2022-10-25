@@ -10,6 +10,8 @@ import Item from '@/models/Item'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useIndexStore } from '@/store'
+import { OpenTabMesagae } from '@/types/store'
+import { emit } from 'process'
 
 window.$message = useMessage()
 const store = useIndexStore()
@@ -19,7 +21,8 @@ const props = defineProps<{
     project: any
 }>()
 const emits = defineEmits<{
-    (e: 'handleRemoveProject', id: string): void
+    (e: 'handleOpenTab', val: OpenTabMesagae<any>): void
+    (e: 'handleCloseTab', ev: null, id: string): void
 }>()
 
 
@@ -110,13 +113,17 @@ const yPos = ref(0)
 const nodeProps = ({ option }: { option: any }): any => {
     return {
         onClick() {
-            if (option.children == undefined || option.children == null) {
-                // emits('handleOpenTab', {
-                //     id: nanoid(), conn: props.conn, tab_type: 'db', data: {
-                //         title: `${option.label}@${props.conn.info.name}`,
-                //         table: option.label
-                //     }
-                // })
+
+        },
+        onDblclick() {
+            if (option.type === 'api') {
+                emits('handleOpenTab', {
+                    id: option.key,
+                    title: option.label,
+                    type: 'api',
+                    item: option.value
+                })
+                showContextmenu.value = false
             }
         },
         onContextmenu(e: MouseEvent): void {
@@ -234,8 +241,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                         props: {
                             onClick: async () => {
                                 if (store.config?.deleteNoConfirm) {
-                                    let obj = await Item.where({ id: option.value }).delete()
-                                    console.log(obj)
+                                    let obj = (await Item.where({ id: option.value }).delete() as Item)
                                     if (expandedKeys.value.includes(option.key as string)) {
                                         expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
                                     }
@@ -247,8 +253,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                         content: `${t('copywriting.deleteFolder')} ${option.label} ?`,
                                         positiveText: t('common.delete'),
                                         onPositiveClick: async () => {
-                                            let obj = await Item.where({ id: option.value }).delete()
-                                            console.log(obj)
+                                            let obj = (await Item.where({ id: option.value }).delete() as Item)
                                             if (expandedKeys.value.includes(option.key as string)) {
                                                 expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
                                             }
@@ -267,11 +272,19 @@ const nodeProps = ({ option }: { option: any }): any => {
             } else if (option.type == 'api') {
                 optionsContextmenu.value = [
                     {
-                        label: t('itemTree.rename'),
-                        key: 'rename',
+                        label: t('common.open'),
+                        key: 'open',
                         props: {
                             onClick: () => {
-                                option.edit = true
+                                if (option.type === 'api') {
+                                    emits('handleOpenTab', {
+                                        id: option.key,
+                                        title: option.label,
+                                        type: 'api',
+                                        item: option.value
+                                    })
+                                    showContextmenu.value = false
+                                }
                                 showContextmenu.value = false
                             }
                         }
@@ -283,6 +296,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                             onClick: async () => {
                                 if (store.config?.deleteNoConfirm) {
                                     await Item.where({ id: option.value }).delete()
+                                    emits('handleCloseTab', null, option.key)
                                     if (expandedKeys.value.includes(option.key as string)) {
                                         expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
                                     }
@@ -295,6 +309,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                         positiveText: t('common.delete'),
                                         onPositiveClick: async () => {
                                             await Item.where({ id: option.value }).delete()
+                                            emits('handleCloseTab', null, option.key)
                                             if (expandedKeys.value.includes(option.key as string)) {
                                                 expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
                                             }

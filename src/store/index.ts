@@ -22,6 +22,7 @@ export const useIndexStore = defineStore<
                 deleteNoConfirm: false,
                 showSideBar: true,
                 sideBarWidth: 250,
+                apiAreaHeight: 300,
                 pageSize: 20,
                 lang: 'zh-CN'
             }
@@ -34,6 +35,13 @@ export const useIndexStore = defineStore<
                     config.sideBarWidth = 150
                 } else if (config.sideBarWidth > 1000) {
                     config.sideBarWidth = 1000
+                }
+            }
+            if (config.apiAreaHeight) {
+                if (config.apiAreaHeight < 150) {
+                    config.apiAreaHeight = 150
+                } else if (config.apiAreaHeight > 1000) {
+                    config.apiAreaHeight = 1000
                 }
             }
             if (!config.pageSize) {

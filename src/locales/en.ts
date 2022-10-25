@@ -5,6 +5,7 @@ const en = {
         cancel: 'Cancel',
         confirm: 'Confirm',
         delete: 'Delete',
+        open: 'Open',
     },
     project: {
         new: 'New Project',

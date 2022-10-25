@@ -11,23 +11,26 @@ import { invoke } from '@tauri-apps/api/tauri'
 import { useIndexStore } from '@/store'
 import { useI18n } from 'vue-i18n'
 import ProjectVue from '@/components/Project.vue'
+import ApiVue from '@/components/tab/Api.vue'
 import Project from '@/models/Project'
 import Item from '@/models/Item'
 import { nanoid } from 'nanoid'
 import tauriConfig from '../src-tauri/tauri.conf.json'
 import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
 import { relaunch } from '@tauri-apps/api/process'
-import create from './models'
+import create from '@/models'
+import { OpenTabMesagae } from '@/types/store'
 
 
 const store = useIndexStore()
 const { t, locale } = useI18n()
 const showSide = ref<boolean>(true)  // 显示侧边栏
-const tree = shallowRef<{ [x: string]: any }>({
-    project: ProjectVue
+const tabComs = shallowRef<{ [x: string]: any }>({
+    api: ApiVue
 })
 const projects = ref<{ [x: string]: any }[]>([])
-const tabs = ref<{ [x: string]: any }[]>([])
+const tab = ref<string>('')
+const tabs = ref<OpenTabMesagae<any>[]>([])
 
 const handleShowSide = async () => {
     showSide.value = !showSide.value
@@ -97,11 +100,6 @@ const handleCancelUpdate = () => {
 }
 // =========== SETTING MODAL END ===========
 
-const handleCloseTab = async (event: Event, id: number) => {
-    event.stopPropagation()
-    console.log(id)
-}
-
 const handleLoadProjects = async () => {
     projects.value = await Project.all()
     await Item.all()
@@ -126,6 +124,17 @@ const handleNewProject = async () => {
 }
 
 onBeforeMount(async () => {
+    let all_tabs = localStorage.getItem('tabs')
+    tabs.value = all_tabs ? JSON.parse(all_tabs) : []
+
+    let current_tab = localStorage.getItem('current_tab')
+    if (current_tab && tabs.value.some(t => t.id == current_tab)) {
+        tab.value = current_tab
+    } else {
+        if (tabs.value.length > 0) {
+            tab.value = tabs.value[0].id
+        }
+    }
     await create()
     try {
         let config = localStorage.getItem('config')
@@ -136,6 +145,7 @@ onBeforeMount(async () => {
                 deleteNoConfirm: false,
                 showSideBar: true,
                 sideBarWidth: 250,
+                apiAreaHeight: 300,
                 pageSize: 20,
                 lang: 'zh-CN'
             }, false)
@@ -201,6 +211,43 @@ onMounted(async () => {
         await invoke('close_splashscreen')
     }, 1000)
 })
+
+const handleOpenTab = async (t: OpenTabMesagae<any>) => {
+    let tt = tabs.value.find(x => x.id == t.id)
+    if (tt) {
+        tab.value = tt.id
+    } else {
+        tabs.value.push(t)
+        tab.value = t.id
+        localStorage.setItem('tabs', JSON.stringify(tabs.value))
+    }
+    localStorage.setItem('current_tab', tab.value)
+}
+const handleTabChanged = async (val: string) => {
+    tab.value = val
+    localStorage.setItem('current_tab', tab.value)
+}
+const handleCloseTab = async (event: Event | null, id: string) => {
+    if (event) {
+        event.stopPropagation()
+    }
+    let index = 0
+    tabs.value = tabs.value.filter((t, i) => {
+        index = i
+        return t.id !== id
+    })
+    if (tab.value == id) {
+        if (tabs.value.length > 0) {
+            if (index < tabs.value.length) {
+                tab.value = tabs.value[index].id
+            } else {
+                tab.value = tabs.value[tabs.value.length - 1].id
+            }
+        }
+    }
+    localStorage.setItem('tabs', JSON.stringify(tabs.value))
+    localStorage.setItem('current_tab', tab.value)
+}
 </script>
 
 <template>
@@ -285,7 +332,8 @@ onMounted(async () => {
                                 <div class="conn">
                                     <n-layout position="absolute" style="background: #21252b; color: #fff"
                                         :native-scrollbar="false" content-style="padding: 10px;">
-                                        <component v-for="project in projects" :is="ProjectVue" :project="project" />
+                                        <component v-for="project in projects" :is="ProjectVue" :project="project"
+                                            @handleOpenTab="handleOpenTab" @handleCloseTab="handleCloseTab" />
                                     </n-layout>
                                 </div>
                                 <div class="btn-side">
@@ -296,17 +344,17 @@ onMounted(async () => {
                             </div>
                             <div class="content" ref="contentRef" :style="`left: ${width}px`">
                                 <section class="workspace">
-                                    <n-tabs closable :tab-style="{
+                                    <n-tabs v-model:value="tab" @update:value="handleTabChanged" :tab-style="{
                                         padding: '6px 10px',
                                     }">
-                                        <n-tab-pane name="chap1" v-for="tab in tabs">
+                                        <n-tab-pane v-for="i in tabs" :name="i.id">
                                             <template #tab>
                                                 <div
                                                     style="display: flex; justify-content: center; align-items: center;">
-                                                    <span>{{ tab.name }}</span>
+                                                    <span>{{ i.title }}</span>
                                                     <n-button circle quaternary size="small"
                                                         style="height: 20px; width: 20px; margin-left: 10px;"
-                                                        @click="handleCloseTab($event, 1)">
+                                                        @click="handleCloseTab($event, i.id)">
                                                         <template #icon>
                                                             <n-icon>
                                                                 <close-outline />
@@ -315,11 +363,7 @@ onMounted(async () => {
                                                     </n-button>
                                                 </div>
                                             </template>
-                                            我这辈子最疯狂的事，发生在我在 Amazon
-                                            当软件工程师的时候，故事是这样的：<br><br>
-                                            那时我和女朋友住在一起，正在家里远程工作。忽然同事给我发来了紧急消息：”我们的服务出现了
-                                            SEV 2 级别的故障！需要所有的人马上协助！“我们组的应用全挂掉了。<br><br>
-                                            当我还在费力的寻找修复方法的时候，忽然闻到隔壁房间的的焦味，防火报警器开始鸣叫。
+                                            <component :is="tabComs[i.type]" :key="i.id" :item="i.item"></component>
                                         </n-tab-pane>
                                         <!-- <n-tab-pane name="chap3" tab="第三章">
                                             <div style=" height: 100%;position: relative;">
@@ -484,7 +528,7 @@ onMounted(async () => {
     /* background: #21252b; */
     position: absolute;
     top: 0;
-    left: 0;
+    left: 2px;
     right: 0;
     bottom: 0;
 }

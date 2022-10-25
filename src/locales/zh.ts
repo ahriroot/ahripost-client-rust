@@ -5,6 +5,7 @@ const zh = {
         cancel: '取消',
         confirm: '确认',
         delete: '删除',
+        open: '打开',
     },
     project: {
         new: '新建项目',
@@ -28,7 +29,6 @@ const zh = {
         checkUpdate: '检查更新',
         noConfirmationForDeletion: '删除时不再提示',
     }
-
 }
 
 export default zh

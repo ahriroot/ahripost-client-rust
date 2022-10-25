@@ -6,19 +6,23 @@
 }
 
 .n-tabs-nav-scroll-content {
-    background-color: #21252b !important;
+    background-color: #333842 !important;
 }
 
 .n-tabs-tab--active {
-    background: #282c34 !important;
+    background: #21252b !important;
     border-bottom: none;
 }
 
 .n-tabs-bar {
-    background-color: #282c34 !important;
+    background-color: #21252b !important;
 }
 
 .n-tabs-tab__label {
+    color: #808890;
+}
+
+.n-tabs-tab--active .n-tabs-tab__label {
     color: #d7d8d9;
 }
 
@@ -28,18 +32,26 @@
 }
 
 .n-tabs {
-    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 .n-tab-pane {
-    height: 100%;
+    padding: 0 !important;
+    position: absolute !important;
+    top: 33px !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
 }
 
 body {
     background-color: #333842;
     width: 100vw;
     height: 100vh;
-
 }
 
 #app {
