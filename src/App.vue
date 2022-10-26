@@ -365,42 +365,6 @@ const handleCloseTab = async (event: Event | null, id: string) => {
                                             </template>
                                             <component :is="tabComs[i.type]" :key="i.id" :item="i.item"></component>
                                         </n-tab-pane>
-                                        <!-- <n-tab-pane name="chap3" tab="第三章">
-                                            <div style=" height: 100%;position: relative;">
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                                <NH2>123</NH2>
-                                            </div>
-                                        </n-tab-pane> -->
                                     </n-tabs>
                                 </section>
                             </div>

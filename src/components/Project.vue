@@ -5,7 +5,7 @@ import { FolderOutline, ChevronForward, CodeWorkingOutline } from '@vicons/ionic
 import { nanoid } from 'nanoid'
 
 import { TreeDropInfo, TreeRenderProps } from 'naive-ui/es/tree/src/interface'
-import AInput from './AInput.vue'
+import AInputFocus from './AInputFocus.vue'
 import Item from '@/models/Item'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
@@ -85,7 +85,7 @@ const renderSwitcherIcon = () => {
 
 const renderLabel = ({ option, checked, selected }: TreeRenderProps): VNodeChild => {
     if (option.edit) {
-        return h(AInput, {
+        return h(AInputFocus, {
             value: option.label as string,
             onUpdateValue: (val: any) => {
                 option.label = val

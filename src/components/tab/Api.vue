@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { h, ref, shallowRef, onMounted, onBeforeMount } from 'vue'
-import { NTree, NIcon, TreeOption, NDropdown, useDialog } from 'naive-ui'
+import { h, ref, shallowRef, onMounted, onBeforeMount, render } from 'vue'
+import {
+    NLayout, NH2, NInputGroup, NButton, NInput, useDialog,
+    NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns
+} from 'naive-ui'
 import { FolderOutline, ChevronForward, CodeWorkingOutline } from '@vicons/ionicons5'
 import { nanoid } from 'nanoid'
-
-import { TreeDropInfo, TreeRenderProps } from 'naive-ui/es/tree/src/interface'
-import AInput from './AInput.vue'
+import AInput from '@/components/AInput.vue'
+import ACheckbox from '@/components/ACheckbox.vue'
 import Item from '@/models/Item'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
@@ -28,6 +30,110 @@ onBeforeMount(async () => {
     data.value = res
     height.value = store.config.apiAreaHeight
 })
+
+const method = ref<string>('GET')
+const options = shallowRef<SelectOption[]>([
+    {
+        label: 'GET',
+        value: 'GET',
+    },
+    {
+        label: 'POST',
+        value: 'POST',
+    },
+    {
+        label: 'PUT',
+        value: 'PUT',
+    },
+    {
+        label: 'DELETE',
+        value: 'DELETE',
+    },
+    {
+        label: 'PATCH',
+        value: 'PATCH',
+    }
+])
+
+const columns = ref<DataTableColumns<any>>([
+    {
+        title: '',
+        key: 'checked',
+        align: 'center',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input',
+                },
+                [
+                    h(ACheckbox, {
+                        value: row.checked,
+                        onUpdateValue: (val: any) => {
+                            row.checked = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Key',
+        key: 'key',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input'
+                },
+                [
+                    h(AInput, {
+                        value: row.field,
+                        onUpdateValue: (val: any) => {
+                            row.field = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Value',
+        key: 'value',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input'
+                },
+                [
+                    h(AInput, {
+                        value: row.value,
+                        onUpdateValue: (val: any) => {
+                            row.value = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Describe',
+        key: 'desc',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input'
+                },
+                [
+                    h(AInput, {
+                        value: row.desc,
+                        onUpdateValue: (val: any) => {
+                            row.desc = val
+                        }
+                    })
+                ]
+            )
+        }
+    }
+])
 
 const topRef = shallowRef<HTMLElement | null>(null)
 const bottomRef = shallowRef<HTMLElement | null>(null)
@@ -83,8 +189,78 @@ onMounted(async () => {
 <template>
     <div class="tab-api">
         <div ref="topRef" class="top" :style="`height: ${height - 2}px; cursor: ${resizeable ? 'ns-resize' : cursor}`">
+            <div class="title">
+                <span>{{ data.label }}</span>
+                <span>env</span>
+            </div>
+            <div class="location">
+                <n-input-group>
+                    <n-select v-model:value="method" :options="options" style="width: 150px" />
+                    <n-input placeholder="Location" />
+                    <n-button secondary>SEND</n-button>
+                </n-input-group>
+            </div>
+            <n-tabs style="top: 72px; bottom: 6px">
+                <n-tab-pane name="chap1" tab="第一章">
+                    <template #tab>
+                        <div style="padding: 0 10px">
+                            <span>Header</span>
+                        </div>
+                    </template>
+                    <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b"
+                        :native-scrollbar="false">
+                        <n-data-table v-if="data.detail?.headers" size="small" :columns="columns"
+                            :data="data.detail.headers" :single-line="false" :bordered="false" />
+                    </n-layout>
+                </n-tab-pane>
+                <n-tab-pane name="chap2" tab="第二章">
+                    <template #tab>
+                        <div style="padding: 0 10px">
+                            <span>Param</span>
+                        </div>
+                    </template>
+                    <div style="padding: 10px">
+                        我这辈子最疯狂的事，发生在我在 Amazon
+                        当软件工程师的时候，故事是这样的：<br><br>
+                        那时我和女朋友住在一起，正在家里远程工作。忽然同事给我发来了紧急消息：”我们的服务出现了
+                        SEV 2 级别的故障！需要所有的人马上协助！“我们组的应用全挂掉了。<br><br>
+                        当我还在费力的寻找修复方法的时候，忽然闻到隔壁房间的的焦味，防火报警器开始鸣叫。
+                    </div>
+                </n-tab-pane>
+                <n-tab-pane name="chap3" tab="第三章">
+                    <template #tab>
+                        <div style="padding: 0 10px">
+                            <span>Body</span>
+                        </div>
+                    </template>
+                    <div style="padding: 10px">
+                        我这辈子最疯狂的事，发生在我在 Amazon
+                        当软件工程师的时候，故事是这样的：<br><br>
+                        那时我和女朋友住在一起，正在家里远程工作。忽然同事给我发来了紧急消息：”我们的服务出现了
+                        SEV 2 级别的故障！需要所有的人马上协助！“我们组的应用全挂掉了。<br><br>
+                        当我还在费力的寻找修复方法的时候，忽然闻到隔壁房间的的焦味，防火报警器开始鸣叫。
+                    </div>
+                </n-tab-pane>
+            </n-tabs>
         </div>
-        <div ref="bottomRef" class="bottom" :style="`top: ${height}px`"></div>
+        <div ref="bottomRef" class="bottom" :style="`top: ${height}px`">
+            <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b" :native-scrollbar="false">
+                <div class="result">
+                    {{ data }}
+                </div>
+                <n-h2>12</n-h2>
+                <n-h2>12</n-h2>
+                <n-h2>12</n-h2>
+                <n-h2>12</n-h2>
+                <n-h2>12</n-h2>
+                <n-h2>12</n-h2>
+                <n-h2>12</n-h2>
+                <n-h2>12</n-h2>
+                <n-h2>12</n-h2>
+                <n-h2>12</n-h2>
+                <n-h2>12</n-h2>
+            </n-layout>
+        </div>
     </div>
 </template>
 
@@ -111,5 +287,17 @@ onMounted(async () => {
     right: 0;
     bottom: 0;
     background: #21252b;
+}
+
+.tab-api .top {
+    height: 100%;
+}
+
+.tab-api .top .title {
+    height: 36px;
+}
+
+.tab-api .top .location {
+    height: 36px;
 }
 </style>

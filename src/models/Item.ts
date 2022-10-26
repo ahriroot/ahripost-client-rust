@@ -18,7 +18,32 @@ class Item extends BaseModel {
     type = StringField({ nullable: false, index: 'type_index' })
     project = InteagerField({ nullable: false, default: 0 })
     parent = InteagerField({ nullable: false, default: 0 })
-    detail = ObjectField({ nullable: false, default: {} })
+    detail = ObjectField({
+        nullable: true, default: {
+            method: 'GET',
+            params: [{
+                checked: true,
+                key: 'k1',
+                value: 'v1',
+                desc: 'describe'
+            }],
+            headers: [{
+                checked: true,
+                field: 'k1',
+                value: 'v1',
+                desc: 'describe'
+            }],
+            body: {
+                form: [{
+                    checked: true,
+                    key: 'k1',
+                    value: 'v1',
+                    desc: 'describe'
+                }],
+                json: `{"k1": "v1"}`
+            }
+        }
+    })
 }
 
 export default Item
