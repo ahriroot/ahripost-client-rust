@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { h, ref, shallowRef, onMounted, onBeforeMount, render } from 'vue'
+import { h, ref, shallowRef, onMounted, onBeforeMount, computed } from 'vue'
 import {
-    NLayout, NH2, NInputGroup, NButton, NInput, useDialog,
+    NLayout, NH2, NInputGroup, NButton, NInput, useDialog, NSpin,
     NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns
 } from 'naive-ui'
 import { FolderOutline, ChevronForward, CodeWorkingOutline } from '@vicons/ionicons5'
@@ -12,6 +12,9 @@ import Item from '@/models/Item'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useIndexStore } from '@/store'
+import { get, post, put, del } from '@/net/http'
+import { Request, Response } from '@/types/net/http'
+import { log } from 'console'
 
 window.$message = useMessage()
 const store = useIndexStore()
@@ -26,9 +29,10 @@ const emits = defineEmits<{
 }>()
 
 onBeforeMount(async () => {
+    height.value = store.config.apiAreaHeight
+
     let res = await Item.where({ id: props.item }).get()
     data.value = res
-    height.value = store.config.apiAreaHeight
 })
 
 const method = ref<string>('GET')
@@ -116,7 +120,7 @@ const columns = ref<DataTableColumns<any>>([
     },
     {
         title: 'Describe',
-        key: 'desc',
+        key: 'describe',
         render(row: any, index: number) {
             return h('div',
                 {
@@ -124,9 +128,48 @@ const columns = ref<DataTableColumns<any>>([
                 },
                 [
                     h(AInput, {
-                        value: row.desc,
+                        value: row.describe,
                         onUpdateValue: (val: any) => {
-                            row.desc = val
+                            row.describe = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Default',
+        key: 'default',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input'
+                },
+                [
+                    h(AInput, {
+                        value: row.default,
+                        onUpdateValue: (val: any) => {
+                            row.default = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Must',
+        key: 'must',
+        align: 'center',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input',
+                },
+                [
+                    h(ACheckbox, {
+                        value: row.must,
+                        onUpdateValue: (val: any) => {
+                            row.must = val
                         }
                     })
                 ]
@@ -134,6 +177,31 @@ const columns = ref<DataTableColumns<any>>([
         }
     }
 ])
+
+const showLoading = ref<boolean>(false)
+const href = computed({
+    get: () => {
+        return data.value.detail?.href || ''
+    },
+    set: (val) => {
+        data.value.detail.href = val
+        let url = new URL(data.value.detail.href)
+        data.value.detail.protocol = url.protocol
+        data.value.detail.host = url.host
+        data.value.detail.port = url.port
+    },
+})
+const handleSend = async () => {
+    showLoading.value = true
+    let response = await get({
+        protocol: 'http:',
+        method: data.value.detail.method,
+        host: 'localhost',
+        port: '3000',
+    })
+    showLoading.value = false
+    console.log(response)
+}
 
 const topRef = shallowRef<HTMLElement | null>(null)
 const bottomRef = shallowRef<HTMLElement | null>(null)
@@ -189,15 +257,15 @@ onMounted(async () => {
 <template>
     <div class="tab-api">
         <div ref="topRef" class="top" :style="`height: ${height - 2}px; cursor: ${resizeable ? 'ns-resize' : cursor}`">
-            <div class="title">
-                <span>{{ data.label }}</span>
+            <div class="title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="padding-left: 10px">{{ data.label }}</span>
                 <span>env</span>
             </div>
             <div class="location">
                 <n-input-group>
                     <n-select v-model:value="method" :options="options" style="width: 150px" />
-                    <n-input placeholder="Location" />
-                    <n-button secondary>SEND</n-button>
+                    <n-input v-model:value="href" placeholder="Location" />
+                    <n-button secondary @click="handleSend">SEND</n-button>
                 </n-input-group>
             </div>
             <n-tabs style="top: 72px; bottom: 6px">
@@ -244,22 +312,25 @@ onMounted(async () => {
             </n-tabs>
         </div>
         <div ref="bottomRef" class="bottom" :style="`top: ${height}px`">
-            <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b" :native-scrollbar="false">
-                <div class="result">
-                    {{ data }}
-                </div>
-                <n-h2>12</n-h2>
-                <n-h2>12</n-h2>
-                <n-h2>12</n-h2>
-                <n-h2>12</n-h2>
-                <n-h2>12</n-h2>
-                <n-h2>12</n-h2>
-                <n-h2>12</n-h2>
-                <n-h2>12</n-h2>
-                <n-h2>12</n-h2>
-                <n-h2>12</n-h2>
-                <n-h2>12</n-h2>
-            </n-layout>
+            <n-spin :show="showLoading">
+                <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b" :native-scrollbar="false">
+
+                    <div class="result">
+                        {{ data }}
+                    </div>
+                    <n-h2>12</n-h2>
+                    <n-h2>12</n-h2>
+                    <n-h2>12</n-h2>
+                    <n-h2>12</n-h2>
+                    <n-h2>12</n-h2>
+                    <n-h2>12</n-h2>
+                    <n-h2>12</n-h2>
+                    <n-h2>12</n-h2>
+                    <n-h2>12</n-h2>
+                    <n-h2>12</n-h2>
+                    <n-h2>12</n-h2>
+                </n-layout>
+            </n-spin>
         </div>
     </div>
 </template>

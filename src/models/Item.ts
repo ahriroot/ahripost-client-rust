@@ -21,24 +21,34 @@ class Item extends BaseModel {
     detail = ObjectField({
         nullable: true, default: {
             method: 'GET',
+            protocol: '',
+            host: '',
+            port: '',
+            href: '',
             params: [{
                 checked: true,
                 key: 'k1',
                 value: 'v1',
-                desc: 'describe'
+                describe: 'describe',
+                default: '',
+                must: true,
             }],
             headers: [{
                 checked: true,
                 field: 'k1',
                 value: 'v1',
-                desc: 'describe'
+                describe: 'describe',
+                default: '',
+                must: true,
             }],
             body: {
                 form: [{
                     checked: true,
                     key: 'k1',
                     value: 'v1',
-                    desc: 'describe'
+                    describe: 'describe',
+                    default: '',
+                    must: true,
                 }],
                 json: `{"k1": "v1"}`
             }

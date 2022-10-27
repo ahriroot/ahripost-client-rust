@@ -2,9 +2,9 @@
 import { onBeforeMount, onMounted, shallowRef, ref } from 'vue'
 import {
     darkTheme, NConfigProvider, NGlobalStyle, NIcon, NLayout,
-    NButton, NModal, NSelect, SelectRenderLabel, NInput, NCard, NSpace,
+    NButton, NModal, NSelect, NInput, NSpace,
     NTabs, NTabPane, NLoadingBarProvider, NMessageProvider, NDialogProvider,
-    NCheckbox, zhCN, enUS, NH2
+    NCheckbox, zhCN, enUS
 } from 'naive-ui'
 import { ArrowForward, Add, CloseOutline, Settings } from '@vicons/ionicons5'
 import { invoke } from '@tauri-apps/api/tauri'
@@ -124,17 +124,6 @@ const handleNewProject = async () => {
 }
 
 onBeforeMount(async () => {
-    let all_tabs = localStorage.getItem('tabs')
-    tabs.value = all_tabs ? JSON.parse(all_tabs) : []
-
-    let current_tab = localStorage.getItem('current_tab')
-    if (current_tab && tabs.value.some(t => t.id == current_tab)) {
-        tab.value = current_tab
-    } else {
-        if (tabs.value.length > 0) {
-            tab.value = tabs.value[0].id
-        }
-    }
     await create()
     try {
         let config = localStorage.getItem('config')
@@ -155,6 +144,18 @@ onBeforeMount(async () => {
         width.value = store.config.sideBarWidth
         oldWidth.value = width.value
     } catch { }
+
+    let all_tabs = localStorage.getItem('tabs')
+    tabs.value = all_tabs ? JSON.parse(all_tabs) : []
+
+    let current_tab = localStorage.getItem('current_tab')
+    if (current_tab && tabs.value.some(t => t.id == current_tab)) {
+        tab.value = current_tab
+    } else {
+        if (tabs.value.length > 0) {
+            tab.value = tabs.value[0].id
+        }
+    }
     await handleLoadProjects()
 })
 
@@ -347,11 +348,11 @@ const handleCloseTab = async (event: Event | null, id: string) => {
                                     <n-tabs v-model:value="tab" @update:value="handleTabChanged" :tab-style="{
                                         padding: '6px 10px',
                                     }">
-                                        <n-tab-pane v-for="i in tabs" :name="i.id">
+                                        <n-tab-pane v-for="i in tabs" :name="i.id" display-directive="show">
                                             <template #tab>
                                                 <div
                                                     style="display: flex; justify-content: center; align-items: center;">
-                                                    <span>{{ i.title }}</span>
+                                                    <span class="tab-title">{{ i.title }}</span>
                                                     <n-button circle quaternary size="small"
                                                         style="height: 20px; width: 20px; margin-left: 10px;"
                                                         @click="handleCloseTab($event, i.id)">
@@ -495,5 +496,13 @@ const handleCloseTab = async (event: Event | null, id: string) => {
     left: 2px;
     right: 0;
     bottom: 0;
+}
+
+#main .main .content .workspace .tab-title {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
 }
 </style>

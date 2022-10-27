@@ -39,7 +39,7 @@ const handleBlur = async () => {
     
 <template>
     <n-input ref="inputRef" size="small" :value="value" @update:value="handleChange" @clear="handleClear"
-        placeholder="Key" clearable />
+        placeholder="" clearable />
 </template>
     
 <style scoped>

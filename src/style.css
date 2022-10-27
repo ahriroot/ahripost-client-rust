@@ -6,15 +6,11 @@
 }
 
 .n-tabs-nav-scroll-content {
-    background-color: #333842 !important;
+    background-color: #1b1e23 !important;
 }
 
-/* .n-tabs-rail {
-    background: #21252b !important;
-} */
-
 .n-tabs-tab {
-    background: #333842 !important;
+    background: #1b1e23 !important;
 }
 
 .n-tabs-tab--active {
@@ -23,7 +19,7 @@
 }
 
 .n-tabs-bar {
-    background-color: #21252b !important;
+    background: none !important;
 }
 
 .n-tabs-tab__label {
@@ -36,7 +32,7 @@
 
 .n-tabs-tab-pad {
     --n-tab-gap: 2px;
-    background: rgb(22, 22, 22);
+    background: #21252b;
 }
 
 .n-tabs {
@@ -71,9 +67,7 @@
 
 .n-base-selection__state-border {
     box-shadow: none !important;
-    border-left: #333842 solid 1px !important;
-    border-top: #333842 solid 1px !important;
-    border-bottom: #333842 solid 1px !important;
+    border: #333842 solid 1px !important;
 }
 
 .n-input-wrapper {
@@ -83,9 +77,16 @@
 .n-input__state-border {
     box-shadow: none !important;
     border: none !important;
-    border-left: #333842 solid 1px !important;
-    border-top: #333842 solid 1px !important;
-    border-bottom: #333842 solid 1px !important;
+    border: #333842 solid 1px !important;
+}
+
+.n-spin-container,
+.n-spin-container .n-spin-content {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
 }
 
 body {
