@@ -26,20 +26,15 @@ const handleClear = async () => {
     emits('update:value', null)
     props.onUpdateValue(null)
 }
-const handleBlur = async () => {
-    if (props.onBlur) {
-        props.onBlur()
-    }
-}
 
-// watch(() => props.value, (val) => {
-//     value.value = val
-// })
+watch(() => props.value, (val) => {
+    value.value = val
+})
 </script>
     
 <template>
-    <n-input ref="inputRef" size="small" :value="value" @update:value="handleChange" @clear="handleClear"
-        placeholder="" clearable />
+    <n-input ref="inputRef" size="small" :value="value" @update:value="handleChange" @clear="handleClear" placeholder=""
+        clearable />
 </template>
     
 <style scoped>

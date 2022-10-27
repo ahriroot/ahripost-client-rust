@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, ref, shallowRef, onMounted, onBeforeMount, computed } from 'vue'
+import { h, ref, shallowRef, onMounted, onBeforeMount, computed, watch } from 'vue'
 import {
     NLayout, NH2, NInputGroup, NButton, NInput, useDialog, NSpin,
     NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns
@@ -14,7 +14,6 @@ import { useI18n } from 'vue-i18n'
 import { useIndexStore } from '@/store'
 import { get, post, put, del } from '@/net/http'
 import { Request, Response } from '@/types/net/http'
-import { log } from 'console'
 
 window.$message = useMessage()
 const store = useIndexStore()
@@ -35,6 +34,7 @@ onBeforeMount(async () => {
     data.value = res
 })
 
+const tab = ref('param')
 const method = ref<string>('GET')
 const options = shallowRef<SelectOption[]>([
     {
@@ -182,15 +182,39 @@ const showLoading = ref<boolean>(false)
 const href = computed({
     get: () => {
         return data.value.detail?.href || ''
+        let p = data.value.detail?.params || []
+        return (data.value.detail?.href || '') + p.map((item: any) => {
+            return item.field + '=' + item.value
+        }).join('&')
     },
     set: (val) => {
         data.value.detail.href = val
-        let url = new URL(data.value.detail.href)
-        data.value.detail.protocol = url.protocol
-        data.value.detail.host = url.host
-        data.value.detail.port = url.port
+        try {
+            let url = new URL(data.value.detail.href)
+            data.value.detail.protocol = url.protocol
+            data.value.detail.host = url.host
+            data.value.detail.port = url.port
+            let params: { [x: string]: string } = {}
+            if (url.search) {
+                url.search.slice(1).split('&').forEach((item: any) => {
+                    let arr = item.split('=')
+                    params[arr[0]] = arr[1]
+                })
+                data.value.detail.params.forEach((item: any) => {
+                    if (item.field in params) {
+                        item.value = params[item.field]
+                    }
+                })
+            }
+        } catch { }
     },
 })
+// watch(() => data.value.detail?.params, (val) => {
+//     // console.log(val)
+// }, {
+//     immediate: false,
+//     deep: true,
+// })
 const handleSend = async () => {
     showLoading.value = true
     let response = await get({
@@ -268,8 +292,8 @@ onMounted(async () => {
                     <n-button secondary @click="handleSend">SEND</n-button>
                 </n-input-group>
             </div>
-            <n-tabs style="top: 72px; bottom: 6px">
-                <n-tab-pane name="chap1" tab="第一章">
+            <n-tabs style="top: 72px; bottom: 6px" v-model:value="tab">
+                <n-tab-pane name="header" display-directive="show">
                     <template #tab>
                         <div style="padding: 0 10px">
                             <span>Header</span>
@@ -281,21 +305,19 @@ onMounted(async () => {
                             :data="data.detail.headers" :single-line="false" :bordered="false" />
                     </n-layout>
                 </n-tab-pane>
-                <n-tab-pane name="chap2" tab="第二章">
+                <n-tab-pane name="param" display-directive="show">
                     <template #tab>
                         <div style="padding: 0 10px">
                             <span>Param</span>
                         </div>
                     </template>
-                    <div style="padding: 10px">
-                        我这辈子最疯狂的事，发生在我在 Amazon
-                        当软件工程师的时候，故事是这样的：<br><br>
-                        那时我和女朋友住在一起，正在家里远程工作。忽然同事给我发来了紧急消息：”我们的服务出现了
-                        SEV 2 级别的故障！需要所有的人马上协助！“我们组的应用全挂掉了。<br><br>
-                        当我还在费力的寻找修复方法的时候，忽然闻到隔壁房间的的焦味，防火报警器开始鸣叫。
-                    </div>
+                    <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b"
+                        :native-scrollbar="false">
+                        <n-data-table v-if="data.detail?.params" size="small" :columns="columns"
+                            :data="data.detail.params" :single-line="false" :bordered="false" />
+                    </n-layout>
                 </n-tab-pane>
-                <n-tab-pane name="chap3" tab="第三章">
+                <n-tab-pane name="body" display-directive="show">
                     <template #tab>
                         <div style="padding: 0 10px">
                             <span>Body</span>
@@ -334,7 +356,7 @@ onMounted(async () => {
         </div>
     </div>
 </template>
-
+<!-- https://127.0.0.1:123?k1=123322222234222 -->
 <style scoped>
 .tab-api {
     position: absolute;

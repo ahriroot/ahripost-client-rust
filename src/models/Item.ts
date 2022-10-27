@@ -27,7 +27,7 @@ class Item extends BaseModel {
             href: '',
             params: [{
                 checked: true,
-                key: 'k1',
+                field: 'k1',
                 value: 'v1',
                 describe: 'describe',
                 default: '',
@@ -44,7 +44,7 @@ class Item extends BaseModel {
             body: {
                 form: [{
                     checked: true,
-                    key: 'k1',
+                    field: 'k1',
                     value: 'v1',
                     describe: 'describe',
                     default: '',
