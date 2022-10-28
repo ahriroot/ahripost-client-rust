@@ -2,7 +2,8 @@
 import { h, ref, shallowRef, onMounted, onBeforeMount, computed, watch } from 'vue'
 import {
     NLayout, NH2, NInputGroup, NButton, NInput, useDialog, NSpin,
-    NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns
+    NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns,
+    NRadioGroup, NSpace, NRadio
 } from 'naive-ui'
 import { FolderOutline, ChevronForward, CodeWorkingOutline } from '@vicons/ionicons5'
 import { nanoid } from 'nanoid'
@@ -18,7 +19,15 @@ import { Request, Response } from '@/types/net/http'
 window.$message = useMessage()
 const store = useIndexStore()
 const dialog = useDialog()
-const data = ref<any>({})
+const data = ref<any>({
+    detail: {
+        body: {
+            type: 'form',
+            form: [],
+            json: ''
+        }
+    }
+})
 
 const props = defineProps<{
     item: any
@@ -180,37 +189,16 @@ const columns = ref<DataTableColumns<any>>([
 
 const showLoading = ref<boolean>(false)
 const href = computed({
-    get: () => {
-        return data.value.detail?.href || ''
-        let p = data.value.detail?.params || []
-        return (data.value.detail?.href || '') + p.map((item: any) => {
-            return item.field + '=' + item.value
-        }).join('&')
+    get() {
+        return data.value.detail?.path || ''
     },
-    set: (val) => {
-        data.value.detail.href = val
-        try {
-            let url = new URL(data.value.detail.href)
-            data.value.detail.protocol = url.protocol
-            data.value.detail.host = url.host
-            data.value.detail.port = url.port
-            let params: { [x: string]: string } = {}
-            if (url.search) {
-                url.search.slice(1).split('&').forEach((item: any) => {
-                    let arr = item.split('=')
-                    params[arr[0]] = arr[1]
-                })
-                data.value.detail.params.forEach((item: any) => {
-                    if (item.field in params) {
-                        item.value = params[item.field]
-                    }
-                })
-            }
-        } catch { }
-    },
+    set(val: string) {
+        data.value.detail.path = val
+    }
 })
-// watch(() => data.value.detail?.params, (val) => {
-//     // console.log(val)
+
+// watch(() => data.value.detail?.params, async (_) => {
+
 // }, {
 //     immediate: false,
 //     deep: true,
@@ -323,13 +311,25 @@ onMounted(async () => {
                             <span>Body</span>
                         </div>
                     </template>
-                    <div style="padding: 10px">
-                        我这辈子最疯狂的事，发生在我在 Amazon
-                        当软件工程师的时候，故事是这样的：<br><br>
-                        那时我和女朋友住在一起，正在家里远程工作。忽然同事给我发来了紧急消息：”我们的服务出现了
-                        SEV 2 级别的故障！需要所有的人马上协助！“我们组的应用全挂掉了。<br><br>
-                        当我还在费力的寻找修复方法的时候，忽然闻到隔壁房间的的焦味，防火报警器开始鸣叫。
-                    </div>
+                    <n-radio-group style="position: absolute; top: 6px; left: 4px" v-model:value="data.detail.body.type" name="radiogroup">
+                        <n-space>
+                            <n-radio v-for="song in [
+                                { label: 'JSON', value: 'json' },
+                                { label: 'Form', value: 'form' },
+                                { label: 'Text', value: 'text' },
+                                { label: 'XML', value: 'xml' },
+                                { label: 'Binary', value: 'binary' },
+                            ]" :key="song.value" :value="song.value">
+                                {{ song.label }}
+                            </n-radio>
+                        </n-space>
+                    </n-radio-group>
+                    <n-layout position="absolute" style="top: 30px; bottom: 0; background: #21252b"
+                        :native-scrollbar="false">
+
+                        <!-- <n-data-table v-if="data.detail?.params" size="small" :columns="columns"
+                            :data="data.detail.params" :single-line="false" :bordered="false" /> -->
+                    </n-layout>
                 </n-tab-pane>
             </n-tabs>
         </div>

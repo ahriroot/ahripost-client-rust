@@ -24,7 +24,9 @@ class Item extends BaseModel {
             protocol: '',
             host: '',
             port: '',
+            path: '',
             href: '',
+            search: '',
             params: [{
                 checked: true,
                 field: 'k1',
@@ -42,6 +44,7 @@ class Item extends BaseModel {
                 must: true,
             }],
             body: {
+                type: 'form',
                 form: [{
                     checked: true,
                     field: 'k1',
