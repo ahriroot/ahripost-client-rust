@@ -5,14 +5,14 @@ pub async fn start_login_server() -> bool {
     let (tx, mut rx) = tokio::sync::mpsc::channel::<i32>(12);
 
     tokio::spawn(async move {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1").unwrap();
-        let port = listener.local_addr().unwrap().port();
+        // let listener = tokio::net::TcpListener::bind("127.0.0.1").await.unwrap();
+        // let port = listener.local_addr().unwrap().port();
         
 
-        for stream in listener.incoming() {
-            let stream = stream.unwrap();
-            thread::spawn(|| handle_connection(stream));
-        }
+        // for stream in listener.incoming() {
+        //     let stream = stream.unwrap();
+        //     thread::spawn(|| handle_connection(stream));
+        // }
 
         tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
         tx.send(0).await.unwrap();

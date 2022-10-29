@@ -3,7 +3,7 @@ import { h, ref, shallowRef, onMounted, onBeforeMount, computed, watch } from 'v
 import {
     NLayout, NH2, NInputGroup, NButton, NInput, useDialog, NSpin, NIcon,
     NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns,
-    NRadioGroup, NSpace, NRadio
+    NRadioGroup, NSpace, NRadio, NUpload, NUploadFileList, NPopover
 } from 'naive-ui'
 import { FolderOutline, Add, Remove } from '@vicons/ionicons5'
 import { nanoid } from 'nanoid'
@@ -42,6 +42,11 @@ onBeforeMount(async () => {
 
     let res = await Item.where({ id: props.item }).get()
     data.value = res
+
+    data.value.detail.body.form = data.value.detail.body.form.map((item: any) => {
+        item.file = null
+        return item
+    })
 })
 
 const method = ref<string>('GET')
@@ -106,6 +111,265 @@ const columns = ref<DataTableColumns<any>>([
                             row.value = val
                         }
                     })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Describe',
+        key: 'describe',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input'
+                },
+                [
+                    h(AInput, {
+                        value: row.describe,
+                        onUpdateValue: (val: any) => {
+                            row.describe = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Default',
+        key: 'default',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input'
+                },
+                [
+                    h(AInput, {
+                        value: row.default,
+                        onUpdateValue: (val: any) => {
+                            row.default = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Must',
+        key: 'must',
+        align: 'center',
+        width: 60,
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input',
+                },
+                [
+                    h(ACheckbox, {
+                        value: row.must,
+                        onUpdateValue: (val: any) => {
+                            row.must = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        key: 'title',
+        align: 'center',
+        width: 34,
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input',
+                },
+                [
+                    h(NButton, {
+                        size: 'small',
+                        quaternary: true,
+                        onClick: () => {
+                            data.value.detail.body.form.push({
+                                key: nanoid(),
+                                checked: true,
+                                field: '',
+                                value: '',
+                                describe: '',
+                                default: '',
+                                must: true
+                            })
+                        }
+                    }, {
+                        default: () => h(
+                            NIcon,
+                            {},
+                            {
+                                default: () => h(Remove)
+                            }
+                        )
+                    })
+                ]
+            )
+        },
+        title() {
+            return h('div',
+                {
+                    class: 'input',
+                },
+                [
+                    h(NButton, {
+                        size: 'small',
+                        quaternary: true,
+                        onClick: () => {
+                            if (data.value.detail.tab === 'param') {
+                                data.value.detail.params.push({
+                                    key: nanoid(),
+                                    checked: true,
+                                    field: '',
+                                    value: '',
+                                    describe: '',
+                                    default: '',
+                                    must: true
+                                })
+                            } else if (data.value.detail.tab === 'header') {
+                                data.value.detail.headers.push({
+                                    key: nanoid(),
+                                    checked: true,
+                                    field: '',
+                                    value: '',
+                                    describe: '',
+                                    default: '',
+                                    must: true
+                                })
+                            } else if (data.value.detail.tab === 'body' && data.value.detail.body.type === 'form') {
+                                data.value.detail.body.form.push({
+                                    key: nanoid(),
+                                    checked: true,
+                                    field: '',
+                                    value: '',
+                                    describe: '',
+                                    default: '',
+                                    must: true
+                                })
+                            }
+                        }
+                    }, {
+                        default: () => h(
+                            NIcon,
+                            {},
+                            {
+                                default: () => h(Add)
+                            }
+                        )
+                    })
+                ]
+            )
+        }
+    }
+])
+
+const columnsForm = ref<DataTableColumns<any>>([
+    {
+        type: 'selection',
+    },
+    {
+        title: 'Key',
+        key: 'key',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input'
+                },
+                [
+                    h(AInput, {
+                        value: row.field,
+                        onUpdateValue: (val: any) => {
+                            row.field = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Value',
+        key: 'value',
+        minWidth: 300,
+        render(row: any, index: number) {
+            let node
+            if (row.type == 'text') {
+                node = h(AInput, {
+                    value: row.value,
+                    onUpdateValue: (val: any) => {
+                        row.value = val
+                    }
+                })
+            } else if (row.type == 'file') {
+                node = h(NUpload, {
+                    multiple: true,
+                    size: 'small',
+                    defaultUpload: false,
+                    showFileList: false,
+                    onUpdateFileList: (val: any) => {
+                        console.log(data.value.detail.body.form)
+                        row.file = val
+                    }
+                }, {
+                    default: () => h(NPopover, {
+                    }, {
+                        trigger: () => h(
+                            NButton,
+                            {
+                                size: 'small',
+                                tertiary: true,
+                            },
+                            {
+                                default: () => {
+                                    if (row.file) {
+                                        return row.file[0].name
+                                    }
+                                    return 'Upload'
+                                }
+                            }
+                        ),
+                        default: () => {
+                            if (row.file) {
+                                let filelist = row.file.map((item: any) => {
+                                    return h('div', {}, item.file.name)
+                                })
+                                return filelist
+                            }
+                            return '[no file]'
+                        }
+                    })
+                })
+            }
+            return h('div',
+                {
+                    class: 'input',
+                    style: {
+                        display: 'flex'
+                    }
+                },
+                [
+                    h(NSelect, {
+                        value: row.type,
+                        size: 'small',
+                        style: {
+                            width: '100px'
+                        },
+                        options: [{
+                            label: "Text",
+                            value: 'text'
+                        }, {
+                            label: "File",
+                            value: 'file'
+                        }],
+                        onUpdateValue: (val: any) => {
+                            console.log(val)
+                            row.type = val
+                        }
+                    }),
+                    node
                 ]
             )
         }
@@ -431,7 +695,7 @@ onMounted(async () => {
                     </div>
                     <n-layout v-show="data.detail.body.type == 'form'" position="absolute"
                         style="top: 30px; bottom: 0; background: #21252b" :native-scrollbar="false">
-                        <n-data-table v-if="data.detail?.params" size="small" :columns="columns"
+                        <n-data-table v-if="data.detail?.params" size="small" :columns="columnsForm"
                             v-model:checked-row-keys="data.detail.body.form_keys" :data="data.detail.body.form"
                             :single-line="false" :bordered="false" />
                     </n-layout>
