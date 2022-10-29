@@ -4,6 +4,7 @@
 )]
 
 use ahripost_client_rust::entity;
+use ahripost_client_rust::interface;
 use serde_json::{json, Value};
 use tauri::Manager;
 
@@ -52,7 +53,11 @@ async fn get(request: entity::Request) -> Value {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = tauri::Builder::default();
 
-    app = app.invoke_handler(tauri::generate_handler![close_splashscreen, get]);
+    app = app.invoke_handler(tauri::generate_handler![
+        close_splashscreen,
+        get,
+        interface::start_login_server
+    ]);
     app.run(tauri::generate_context!())
         .expect("error while running ahridbms application");
     Ok(())

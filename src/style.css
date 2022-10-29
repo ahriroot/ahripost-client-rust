@@ -89,6 +89,10 @@
     bottom: 0 !important;
 }
 
+.n-data-table-td {
+    background: #21252b !important;
+}
+
 body {
     background-color: #333842;
     width: 100vw;

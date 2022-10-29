@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { h, ref, shallowRef, onMounted, onBeforeMount, computed, watch } from 'vue'
 import {
-    NLayout, NH2, NInputGroup, NButton, NInput, useDialog, NSpin,
+    NLayout, NH2, NInputGroup, NButton, NInput, useDialog, NSpin, NIcon,
     NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns,
     NRadioGroup, NSpace, NRadio
 } from 'naive-ui'
-import { FolderOutline, ChevronForward, CodeWorkingOutline } from '@vicons/ionicons5'
+import { FolderOutline, Add, Remove } from '@vicons/ionicons5'
 import { nanoid } from 'nanoid'
 import AInput from '@/components/AInput.vue'
 import ACheckbox from '@/components/ACheckbox.vue'
@@ -15,6 +15,7 @@ import { useI18n } from 'vue-i18n'
 import { useIndexStore } from '@/store'
 import { get, post, put, del } from '@/net/http'
 import { Request, Response } from '@/types/net/http'
+import Editor from '@/components/Editor.vue'
 
 window.$message = useMessage()
 const store = useIndexStore()
@@ -43,7 +44,6 @@ onBeforeMount(async () => {
     data.value = res
 })
 
-const tab = ref('param')
 const method = ref<string>('GET')
 const options = shallowRef<SelectOption[]>([
     {
@@ -70,24 +70,7 @@ const options = shallowRef<SelectOption[]>([
 
 const columns = ref<DataTableColumns<any>>([
     {
-        title: '',
-        key: 'checked',
-        align: 'center',
-        render(row: any, index: number) {
-            return h('div',
-                {
-                    class: 'input',
-                },
-                [
-                    h(ACheckbox, {
-                        value: row.checked,
-                        onUpdateValue: (val: any) => {
-                            row.checked = val
-                        }
-                    })
-                ]
-            )
-        }
+        type: 'selection',
     },
     {
         title: 'Key',
@@ -169,6 +152,7 @@ const columns = ref<DataTableColumns<any>>([
         title: 'Must',
         key: 'must',
         align: 'center',
+        width: 60,
         render(row: any, index: number) {
             return h('div',
                 {
@@ -180,6 +164,97 @@ const columns = ref<DataTableColumns<any>>([
                         onUpdateValue: (val: any) => {
                             row.must = val
                         }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        key: 'title',
+        align: 'center',
+        width: 34,
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input',
+                },
+                [
+                    h(NButton, {
+                        size: 'small',
+                        quaternary: true,
+                        onClick: () => {
+                            data.value.detail.body.form.push({
+                                key: nanoid(),
+                                checked: true,
+                                field: '',
+                                value: '',
+                                describe: '',
+                                default: '',
+                                must: true
+                            })
+                        }
+                    }, {
+                        default: () => h(
+                            NIcon,
+                            {},
+                            {
+                                default: () => h(Remove)
+                            }
+                        )
+                    })
+                ]
+            )
+        },
+        title() {
+            return h('div',
+                {
+                    class: 'input',
+                },
+                [
+                    h(NButton, {
+                        size: 'small',
+                        quaternary: true,
+                        onClick: () => {
+                            if (data.value.detail.tab === 'param') {
+                                data.value.detail.params.push({
+                                    key: nanoid(),
+                                    checked: true,
+                                    field: '',
+                                    value: '',
+                                    describe: '',
+                                    default: '',
+                                    must: true
+                                })
+                            } else if (data.value.detail.tab === 'header') {
+                                data.value.detail.headers.push({
+                                    key: nanoid(),
+                                    checked: true,
+                                    field: '',
+                                    value: '',
+                                    describe: '',
+                                    default: '',
+                                    must: true
+                                })
+                            } else if (data.value.detail.tab === 'body' && data.value.detail.body.type === 'form') {
+                                data.value.detail.body.form.push({
+                                    key: nanoid(),
+                                    checked: true,
+                                    field: '',
+                                    value: '',
+                                    describe: '',
+                                    default: '',
+                                    must: true
+                                })
+                            }
+                        }
+                    }, {
+                        default: () => h(
+                            NIcon,
+                            {},
+                            {
+                                default: () => h(Add)
+                            }
+                        )
                     })
                 ]
             )
@@ -214,7 +289,11 @@ const handleSend = async () => {
     showLoading.value = false
     console.log(response)
 }
+const handleChangeType = (val: string) => {
+    editorRef.value.setValue(data.value.detail.body.json || '')
+}
 
+const tabApiRef = shallowRef<HTMLElement | null>(null)
 const topRef = shallowRef<HTMLElement | null>(null)
 const bottomRef = shallowRef<HTMLElement | null>(null)
 const resizeable = ref<boolean>(false)
@@ -222,6 +301,7 @@ const height = ref(store.config.apiAreaHeight)
 const oldHeight = ref(250)
 const cursor = ref('default')
 const currentMoveY = ref(0)
+const editorRef = shallowRef<any>(null)
 onMounted(async () => {
     if (topRef.value && bottomRef.value) {
         topRef.value.addEventListener('mousedown', (ev) => {
@@ -255,7 +335,7 @@ onMounted(async () => {
                 }
             }
         })
-        document.body.addEventListener('mouseup', (ev) => {
+        document.body.addEventListener('mouseup', (_) => {
             resizeable.value = false
             store.updateConfig({
                 ...store.config,
@@ -263,11 +343,26 @@ onMounted(async () => {
             })
         })
     }
+    setTimeout(() => {
+        if (editorRef.value && data.value.detail?.body) {
+            editorRef.value.setValue(data.value.detail.body.json || '')
+        }
+    }, 1000)
+
+    tabApiRef.value?.addEventListener('keydown', async (ev) => {
+        if (ev.ctrlKey && ev.key == 's') {
+            ev.preventDefault()
+            let obj: any = await Item.where({ id: props.item }).obj()
+            data.value.detail.updated = new Date().getTime()
+            obj.detail = JSON.parse(JSON.stringify(data.value.detail))
+            obj.save()
+        }
+    })
 })
 </script>
 
 <template>
-    <div class="tab-api">
+    <div class="tab-api" ref="tabApiRef" tabindex="1">
         <div ref="topRef" class="top" :style="`height: ${height - 2}px; cursor: ${resizeable ? 'ns-resize' : cursor}`">
             <div class="title" style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="padding-left: 10px">{{ data.label }}</span>
@@ -280,7 +375,7 @@ onMounted(async () => {
                     <n-button secondary @click="handleSend">SEND</n-button>
                 </n-input-group>
             </div>
-            <n-tabs style="top: 72px; bottom: 6px" v-model:value="tab">
+            <n-tabs style="top: 72px; bottom: 6px" v-model:value="data.detail.tab">
                 <n-tab-pane name="header" display-directive="show">
                     <template #tab>
                         <div style="padding: 0 10px">
@@ -290,7 +385,8 @@ onMounted(async () => {
                     <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b"
                         :native-scrollbar="false">
                         <n-data-table v-if="data.detail?.headers" size="small" :columns="columns"
-                            :data="data.detail.headers" :single-line="false" :bordered="false" />
+                            v-model:checked-row-keys="data.detail.headers_keys" :data="data.detail.headers"
+                            :single-line="false" :bordered="false" />
                     </n-layout>
                 </n-tab-pane>
                 <n-tab-pane name="param" display-directive="show">
@@ -302,7 +398,8 @@ onMounted(async () => {
                     <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b"
                         :native-scrollbar="false">
                         <n-data-table v-if="data.detail?.params" size="small" :columns="columns"
-                            :data="data.detail.params" :single-line="false" :bordered="false" />
+                            v-model:checked-row-keys="data.detail.params_keys" :data="data.detail.params"
+                            :single-line="false" :bordered="false" />
                     </n-layout>
                 </n-tab-pane>
                 <n-tab-pane name="body" display-directive="show">
@@ -311,9 +408,11 @@ onMounted(async () => {
                             <span>Body</span>
                         </div>
                     </template>
-                    <n-radio-group style="position: absolute; top: 6px; left: 4px" v-model:value="data.detail.body.type" name="radiogroup">
+                    <n-radio-group v-model:value="data.detail.body.type" style="position: absolute; top: 6px; left: 4px"
+                        name="radiogroup" @update:value="handleChangeType">
                         <n-space>
                             <n-radio v-for="song in [
+                                { label: 'None', value: 'none' },
                                 { label: 'JSON', value: 'json' },
                                 { label: 'Form', value: 'form' },
                                 { label: 'Text', value: 'text' },
@@ -324,11 +423,17 @@ onMounted(async () => {
                             </n-radio>
                         </n-space>
                     </n-radio-group>
-                    <n-layout position="absolute" style="top: 30px; bottom: 0; background: #21252b"
-                        :native-scrollbar="false">
-
-                        <!-- <n-data-table v-if="data.detail?.params" size="small" :columns="columns"
-                            :data="data.detail.params" :single-line="false" :bordered="false" /> -->
+                    <div v-show="data.detail.body.type == 'none'"></div>
+                    <div v-show="data.detail.body.type == 'json'"
+                        style="position: absolute; top: 30px; left: 0; bottom: 0; right: 0">
+                        <Editor ref="editorRef" @change="(val) => data.detail.body.json = val"
+                            :value="data.detail.body.json" />
+                    </div>
+                    <n-layout v-show="data.detail.body.type == 'form'" position="absolute"
+                        style="top: 30px; bottom: 0; background: #21252b" :native-scrollbar="false">
+                        <n-data-table v-if="data.detail?.params" size="small" :columns="columns"
+                            v-model:checked-row-keys="data.detail.body.form_keys" :data="data.detail.body.form"
+                            :single-line="false" :bordered="false" />
                     </n-layout>
                 </n-tab-pane>
             </n-tabs>
@@ -336,7 +441,6 @@ onMounted(async () => {
         <div ref="bottomRef" class="bottom" :style="`top: ${height}px`">
             <n-spin :show="showLoading">
                 <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b" :native-scrollbar="false">
-
                     <div class="result">
                         {{ data }}
                     </div>
@@ -351,6 +455,9 @@ onMounted(async () => {
                     <n-h2>12</n-h2>
                     <n-h2>12</n-h2>
                     <n-h2>12</n-h2>
+                    <iframe border="0" style="border: none">
+                        <p>123</p>
+                    </iframe>
                 </n-layout>
             </n-spin>
         </div>

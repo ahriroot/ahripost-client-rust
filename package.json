@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^1.1.0",
+    "iorm": "^0.0.16",
     "monaco-editor": "^0.34.0",
-    "iorm": "0.0.16",
     "nanoid": "^4.0.0",
     "pinia": "^2.0.23",
     "vue": "^3.2.37",

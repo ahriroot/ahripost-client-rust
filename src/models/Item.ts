@@ -20,6 +20,7 @@ class Item extends BaseModel {
     parent = InteagerField({ nullable: false, default: 0 })
     detail = ObjectField({
         nullable: true, default: {
+            updated: 0,
             method: 'GET',
             protocol: '',
             host: '',
@@ -27,7 +28,10 @@ class Item extends BaseModel {
             path: '',
             href: '',
             search: '',
+            tab: 'body',
+            params_keys: [],
             params: [{
+                key: 'k1',
                 checked: true,
                 field: 'k1',
                 value: 'v1',
@@ -35,7 +39,9 @@ class Item extends BaseModel {
                 default: '',
                 must: true,
             }],
+            headers_keys: [],
             headers: [{
+                key: 'k1',
                 checked: true,
                 field: 'k1',
                 value: 'v1',
@@ -44,8 +50,10 @@ class Item extends BaseModel {
                 must: true,
             }],
             body: {
-                type: 'form',
+                type: 'json',
+                form_keys: [],
                 form: [{
+                    key: 'k1',
                     checked: true,
                     field: 'k1',
                     value: 'v1',

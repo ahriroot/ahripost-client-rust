@@ -6,7 +6,7 @@ import {
     NTabs, NTabPane, NLoadingBarProvider, NMessageProvider, NDialogProvider,
     NCheckbox, zhCN, enUS
 } from 'naive-ui'
-import { ArrowForward, Add, CloseOutline, Settings } from '@vicons/ionicons5'
+import { ArrowForward, Add, CloseOutline, Settings, PersonCircleOutline } from '@vicons/ionicons5'
 import { invoke } from '@tauri-apps/api/tauri'
 import { useIndexStore } from '@/store'
 import { useI18n } from 'vue-i18n'
@@ -20,6 +20,8 @@ import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
 import { relaunch } from '@tauri-apps/api/process'
 import create from '@/models'
 import { OpenTabMesagae } from '@/types/store'
+import { start_login_server } from '@/net/http'
+import { open } from '@tauri-apps/api/shell'
 
 
 const store = useIndexStore()
@@ -249,6 +251,14 @@ const handleCloseTab = async (event: Event | null, id: string) => {
     localStorage.setItem('tabs', JSON.stringify(tabs.value))
     localStorage.setItem('current_tab', tab.value)
 }
+const handleLogin = async () => {
+    console.log(1)
+    let res = await start_login_server()
+    console.log(2)
+    if (res) {
+        await open('http://127.0.0.1:3000')
+    }
+}
 </script>
 
 <template>
@@ -309,6 +319,13 @@ const handleCloseTab = async (event: Event | null, id: string) => {
                     <div id="main" class="nocopy">
                         <aside class="side nocopy" :class="store.config?.showSideBar ? '' : 'show'">
                             <div class="sidebar">
+                                <n-button circle quaternary size="small" @click.stop="handleLogin">
+                                    <template #icon>
+                                        <n-icon>
+                                            <PersonCircleOutline />
+                                        </n-icon>
+                                    </template>
+                                </n-button>
                                 <n-button circle quaternary size="small" @click.stop="showSetting = true">
                                     <template #icon>
                                         <n-icon class="btn-icon-setting">

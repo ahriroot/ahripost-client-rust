@@ -21,4 +21,9 @@ const del = async (request: Request) => {
     return res
 }
 
-export { get, post, put, del }
+const start_login_server = async () => {
+    let res = await invoke('start_login_server')
+    return res
+}
+
+export { get, post, put, del, start_login_server }
