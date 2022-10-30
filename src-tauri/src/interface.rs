@@ -1,3 +1,7 @@
+use crate::entity;
+use reqwest;
+use serde_json::{json, Value};
+
 #[tauri::command]
 pub async fn start_login_server() -> bool {
     println!("start_login_server start");
@@ -7,7 +11,6 @@ pub async fn start_login_server() -> bool {
     tokio::spawn(async move {
         // let listener = tokio::net::TcpListener::bind("127.0.0.1").await.unwrap();
         // let port = listener.local_addr().unwrap().port();
-        
 
         // for stream in listener.incoming() {
         //     let stream = stream.unwrap();
@@ -23,4 +26,95 @@ pub async fn start_login_server() -> bool {
         return true;
     }
     false
+}
+
+#[tauri::command]
+pub async fn request(request: entity::Request) -> Value {
+    let href = format!(
+        "{}//{}:{}{}",
+        request.protocol, request.host, request.port, request.path
+    );
+    let params = request
+        .params
+        .iter()
+        .map(|param| (param.field.as_str(), param.value.as_str()))
+        .collect::<Vec<(&str, &str)>>();
+    let mut headers = reqwest::header::HeaderMap::new();
+    for header in request.headers {
+        headers.insert(
+            reqwest::header::HeaderName::from_bytes(header.field.as_bytes()).unwrap(),
+            reqwest::header::HeaderValue::from_bytes(header.value.as_bytes()).unwrap(),
+        );
+    }
+    // let body: reqwest::Body = match request.body_type.as_str() {
+    //     "form" => {
+    //         let form = request
+    //             .form
+    //             .iter()
+    //             .map(|form| (form.field.as_str(), form.value.as_str()))
+    //             .collect::<Vec<(&str, &str)>>();
+    //         reqwest::Body::from(reqwest::blocking::multipart::Form::new().text("foo", "bar"))
+    //     }
+    //     "json" => reqwest::Body::from(request.json),
+    //     _ => reqwest::Body::empty(),
+    // };
+
+    // let file_byte = std::fs::read(file_path).unwrap();
+    // let part = reqwest::multipart::Part::bytes(Cow::from(file_byte)).file_name("test.txt");
+    // let form = reqwest::multipart::Form::new().part("file", part);
+    println!("href: {}", href);
+    let mut response_result = reqwest::Client::new()
+        .request(
+            match request.method.as_str() {
+                "GET" => reqwest::Method::GET,
+                "POST" => reqwest::Method::POST,
+                "PUT" => reqwest::Method::PUT,
+                "DELETE" => reqwest::Method::DELETE,
+                "HEAD" => reqwest::Method::HEAD,
+                "OPTIONS" => reqwest::Method::OPTIONS,
+                "PATCH" => reqwest::Method::PATCH,
+                "TRACE" => reqwest::Method::TRACE,
+                _ => reqwest::Method::GET,
+            },
+            href.as_str(),
+        )
+        .query(&params)
+        .headers(headers);
+    if request.body_type.as_str() == "json" {
+        let json_data: Value = serde_json::from_str(request.json.as_str()).unwrap();
+        response_result = response_result.json(&json_data);
+    } else if request.body_type.as_str() == "form" {
+        let form = request
+            .form
+            .iter()
+            .map(|form| (form.field.as_str(), form.value.as_str()))
+            .collect::<Vec<(&str, &str)>>();
+        response_result = response_result.form(&form);
+    }
+    let response_result = response_result.send().await;
+    match response_result {
+        Ok(response) => {
+            // 遍历 headers
+            let mut headers = json!({});
+            for (key, value) in response.headers() {
+                headers[key.as_str()] = json!(value.to_str().unwrap());
+            }
+            let version = match response.version() {
+                reqwest::Version::HTTP_09 => "HTTP/0.9",
+                reqwest::Version::HTTP_10 => "HTTP/1.0",
+                reqwest::Version::HTTP_11 => "HTTP/1.1",
+                reqwest::Version::HTTP_2 => "HTTP/2.0",
+                reqwest::Version::HTTP_3 => "HTTP/3.0",
+                _ => "Unknown",
+            };
+            json!({
+                "status": response.status().as_u16(),
+                "canonical_reason": response.status().canonical_reason().unwrap_or("Unknown"),
+                "version": version,
+                "headers": headers,
+                "body": response.text().await.unwrap()
+            })
+        }
+        Err(err) => json!({ "error": err.to_string() }),
+    }
 }

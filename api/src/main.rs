@@ -1,11 +1,9 @@
 use axum::{
     body::Body,
-    http::{Request, StatusCode},
-    response::IntoResponse,
-    routing::{get, post},
+    http::Request,
+    routing::{delete, get, post, put},
     Json, Router,
 };
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::net::SocketAddr;
 
@@ -14,9 +12,10 @@ async fn main() {
     // build our application with a route
     let app = Router::new()
         // `GET /` goes to `root`
-        .route("/", get(root))
-        // `POST /users` goes to `create_user`
-        .route("/users", post(create_user));
+        .route("/data", get(get_data))
+        .route("/data", post(post_data))
+        .route("/data", put(put_data))
+        .route("/data", delete(delete_data));
 
     // run our app with hyper
     // `axum::Server` is a re-export of `hyper::Server`
@@ -29,7 +28,7 @@ async fn main() {
 }
 
 // basic handler that responds with a static string
-async fn root(req: Request<Body>) -> Json<Value> {
+async fn get_data(req: Request<Body>) -> Json<Value> {
     println!("Request: {:?}", req);
     // headers
     let headers = req.headers();
@@ -40,31 +39,36 @@ async fn root(req: Request<Body>) -> Json<Value> {
     Json(json!({ "data": 42 }))
 }
 
-async fn create_user(
-    // this argument tells axum to parse the request body
-    // as JSON into a `CreateUser` type
-    Json(payload): Json<CreateUser>,
-) -> impl IntoResponse {
-    // insert your application logic here
-    let user = User {
-        id: 1337,
-        username: payload.username,
-    };
-
-    // this will be converted into a JSON response
-    // with a status code of `201 Created`
-    (StatusCode::CREATED, Json(user))
+// upload file
+async fn post_data(req: Request<Body>) -> Json<Value> {
+    println!("Request: {:?}", req);
+    // headers
+    let headers = req.headers();
+    // 遍历请求头
+    for (key, value) in headers.iter() {
+        println!("{}: {:?}", key, value);
+    }
+    Json(json!({ "data": 42 }))
 }
 
-// the input to our `create_user` handler
-#[derive(Deserialize)]
-struct CreateUser {
-    username: String,
+async fn put_data(req: Request<Body>) -> Json<Value> {
+    println!("Request: {:?}", req);
+    // headers
+    let headers = req.headers();
+    // 遍历请求头
+    for (key, value) in headers.iter() {
+        println!("{}: {:?}", key, value);
+    }
+    Json(json!({ "data": 42 }))
 }
 
-// the output to our `create_user` handler
-#[derive(Serialize)]
-struct User {
-    id: u64,
-    username: String,
+async fn delete_data(req: Request<Body>) -> Json<Value> {
+    println!("Request: {:?}", req);
+    // headers
+    let headers = req.headers();
+    // 遍历请求头
+    for (key, value) in headers.iter() {
+        println!("{}: {:?}", key, value);
+    }
+    Json(json!({ "data": 42 }))
 }
