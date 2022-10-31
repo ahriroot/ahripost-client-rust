@@ -24,7 +24,8 @@ export const useIndexStore = defineStore<
                 sideBarWidth: 250,
                 apiAreaHeight: 300,
                 pageSize: 20,
-                lang: 'zh-CN'
+                lang: 'zh-CN',
+                token: '',
             }
         }
     },

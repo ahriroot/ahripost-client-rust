@@ -2,7 +2,7 @@
 import { onBeforeMount, onMounted, shallowRef, ref } from 'vue'
 import {
     darkTheme, NConfigProvider, NGlobalStyle, NIcon, NLayout,
-    NButton, NModal, NSelect, NInput, NSpace,
+    NButton, NModal, NSelect, NInput, NSpace, NInputGroup,
     NTabs, NTabPane, NLoadingBarProvider, NMessageProvider, NDialogProvider,
     NCheckbox, zhCN, enUS
 } from 'naive-ui'
@@ -27,12 +27,23 @@ import { open } from '@tauri-apps/api/shell'
 const store = useIndexStore()
 const { t, locale } = useI18n()
 const showSide = ref<boolean>(true)  // 显示侧边栏
+const token = ref<string>('')  // token
+const tokenLoading = ref<boolean>(false)  // token
 const tabComs = shallowRef<{ [x: string]: any }>({
     api: ApiVue
 })
 const projects = ref<{ [x: string]: any }[]>([])
 const tab = ref<string>('')
 const tabs = ref<OpenTabMesagae<any>[]>([])
+
+const handleSetToken = async () => {
+    tokenLoading.value = true
+    await store.updateConfig({
+        ...store.config,
+        token: token.value
+    })
+    tokenLoading.value = false
+}
 
 const handleShowSide = async () => {
     showSide.value = !showSide.value
@@ -147,10 +158,13 @@ onBeforeMount(async () => {
                 sideBarWidth: 250,
                 apiAreaHeight: 300,
                 pageSize: 20,
-                lang: 'zh-CN'
+                lang: 'zh-CN',
+                token: ''
             }, false)
         }
         locale.value = store.config.lang
+
+        token.value = store.config.token
 
         width.value = store.config.sideBarWidth
         oldWidth.value = width.value
@@ -308,6 +322,15 @@ const handleLogin = async () => {
                         <n-button :loading="updateLoading" size="small" @click="handleUpdate">
                             {{ t('copywriting.checkUpdate') }}
                         </n-button>
+                        <br>
+                        <br>
+                        <n-input-group>
+                            <n-input v-model:value="token" type="password" show-password-on="mousedown"
+                                placeholder="Token" />
+                            <n-button tertiary @click="handleSetToken" :loading="tokenLoading">
+                                SET
+                            </n-button>
+                        </n-input-group>
                         <br>
                         <br>
                         <div>Version: {{ tauriConfig.package.version }}</div>

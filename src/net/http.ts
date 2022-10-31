@@ -13,6 +13,7 @@ const start_login_server = async () => {
 }
 
 const sync_api = async (args: any) => {
+    console.log(args)
     let res = await invoke('sync_api', args)
     return res
 }

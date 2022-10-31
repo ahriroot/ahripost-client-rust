@@ -12,4 +12,5 @@ export interface Config {
     apiAreaHeight: number
     pageSize: number
     lang: string
+    token: string
 }

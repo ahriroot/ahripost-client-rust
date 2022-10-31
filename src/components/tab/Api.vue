@@ -684,7 +684,11 @@ const handleSync = async () => {
     let item: any = await Item.where({ id: props.item }).get()
     let project: any = await Project.where({ id: item.project }).get()
     item.detail = JSON.stringify(data.value.detail)
-    let res: any = await sync_api({ api: { item: item, project: project }, server: 'http://127.0.0.1:8080' })
+    let res: any = await sync_api({
+        api: { item: item, project: project },
+        server: 'http://127.0.0.1:8080',
+        token: store.config.token || ''
+    })
     console.log(res)
     if (res.data.project._id != project._id) {
         let project_obj: any = await Project.where({ id: item.project }).obj()

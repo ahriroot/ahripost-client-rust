@@ -19,6 +19,7 @@ class Item extends BaseModel {
     type = StringField({ nullable: false, index: 'type_index' })
     project = InteagerField({ nullable: false, default: 0 })
     parent = InteagerField({ nullable: false, default: 0 })
+    user = InteagerField({ nullable: false, default: 0 })
     last_sync = InteagerField({ nullable: false, default: 0 })
     last_update = InteagerField({ nullable: false, default: 0 })
     detail = ObjectField({

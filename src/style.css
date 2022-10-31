@@ -93,6 +93,10 @@
     background: #21252b !important;
 }
 
+.n-card {
+    background: #333842 !important;
+}
+
 body {
     background-color: #333842;
     width: 100vw;
