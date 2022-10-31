@@ -5,10 +5,12 @@ import { NInput } from 'naive-ui'
 const props = withDefaults(defineProps<{
     value: string | null
     bg?: string
+    placeholder?: string
     onUpdateValue: (val: string | null) => void
     onBlur?: () => void
 }>(), {
-    bg: 'none'
+    bg: 'none',
+    placeholder: '',
 })
 const emits = defineEmits<{
     (e: 'update:value', val: string | null): void
@@ -33,8 +35,8 @@ watch(() => props.value, (val) => {
 </script>
     
 <template>
-    <n-input ref="inputRef" size="small" :value="value" @update:value="handleChange" @clear="handleClear" placeholder=""
-        clearable />
+    <n-input ref="inputRef" size="small" :value="value" @update:value="handleChange" @clear="handleClear"
+        :placeholder="props.placeholder" clearable />
 </template>
     
 <style scoped>

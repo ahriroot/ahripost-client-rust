@@ -3,6 +3,31 @@ use reqwest;
 use serde_json::{json, Value};
 
 #[tauri::command]
+pub async fn sync_api(api: Value, server: String) -> Value {
+    let href = format!("{}/client/api/sync", server);
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.insert(
+        reqwest::header::HeaderName::from_bytes("Content-Type".as_bytes()).unwrap(),
+        reqwest::header::HeaderValue::from_bytes("application/json".as_bytes()).unwrap(),
+    );
+    // let json_data: Value = serde_json::from_str("{}").unwrap();
+    let response_result = reqwest::Client::new()
+        .request(reqwest::Method::POST, href.as_str())
+        .headers(headers)
+        .json(&api)
+        .send()
+        .await;
+    match response_result {
+        Ok(response) => {
+            let text = response.text().await.unwrap();
+            let res: Value = text.parse().unwrap();
+            res
+        }
+        Err(err) => json!({ "error": err.to_string() }),
+    }
+}
+
+#[tauri::command]
 pub async fn start_login_server() -> bool {
     println!("start_login_server start");
 

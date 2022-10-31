@@ -11,7 +11,6 @@ import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useIndexStore } from '@/store'
 import { OpenTabMesagae } from '@/types/store'
-import { emit } from 'process'
 
 window.$message = useMessage()
 const store = useIndexStore()
@@ -23,6 +22,7 @@ const props = defineProps<{
 const emits = defineEmits<{
     (e: 'handleOpenTab', val: OpenTabMesagae<any>): void
     (e: 'handleCloseTab', ev: null, id: string): void
+    (e: 'handleDeleteProject', id: number): void
 }>()
 
 
@@ -64,7 +64,7 @@ const handleLoadProject = async () => {
     data.value = [{
         key: `project:${props.project.id}`,
         label: props.project.name,
-        value: 0,
+        value: props.project.id,
         type: 'project',
         edit: false,
         children: res,
@@ -94,6 +94,7 @@ const renderLabel = ({ option, checked, selected }: TreeRenderProps): VNodeChild
                 let tmp = (await Item.where({ id: option.value }).obj() as Item)
                 if (tmp && tmp.id) {
                     tmp.label = option.label
+                    tmp.last_update = new Date().getTime()
                     await tmp.save()
                 }
                 option.edit = false
@@ -149,6 +150,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 item.type = 'api'
                                 item.project = props.project.id
                                 item.parent = option.type == 'project' ? 0 : option.value
+                                item.last_update = new Date().getTime()
                                 let id = await item.save()
 
                                 if (!expandedKeys.value.includes(option.key as string)) {
@@ -195,6 +197,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 item.type = 'folder'
                                 item.project = props.project.id
                                 item.parent = option.type == 'project' ? 0 : option.value
+                                item.last_update = new Date().getTime()
                                 let id = await item.save()
 
                                 if (expandedKeys.value.indexOf(option.key as string) == -1) {
@@ -241,7 +244,11 @@ const nodeProps = ({ option }: { option: any }): any => {
                         props: {
                             onClick: async () => {
                                 if (store.config?.deleteNoConfirm) {
-                                    let obj = (await Item.where({ id: option.value }).delete() as Item)
+                                    if (option.type == 'project') {
+                                        emits('handleDeleteProject', props.project.id)
+                                    } else {
+                                        await Item.where({ id: option.value }).delete()
+                                    }
                                     if (expandedKeys.value.includes(option.key as string)) {
                                         expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
                                     }
@@ -253,7 +260,11 @@ const nodeProps = ({ option }: { option: any }): any => {
                                         content: `${t('copywriting.deleteFolder')} ${option.label} ?`,
                                         positiveText: t('common.delete'),
                                         onPositiveClick: async () => {
-                                            let obj = (await Item.where({ id: option.value }).delete() as Item)
+                                            if (option.type == 'project') {
+                                                emits('handleDeleteProject', props.project.id)
+                                            } else {
+                                                await Item.where({ id: option.value }).delete()
+                                            }
                                             if (expandedKeys.value.includes(option.key as string)) {
                                                 expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
                                             }

@@ -22,7 +22,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     app = app.invoke_handler(tauri::generate_handler![
         close_splashscreen,
         interface::request,
-        interface::start_login_server
+        interface::start_login_server,
+        interface::sync_api
     ]);
     app.run(tauri::generate_context!())
         .expect("error while running ahridbms application");

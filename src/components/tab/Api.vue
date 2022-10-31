@@ -3,7 +3,7 @@ import { h, ref, shallowRef, onMounted, onBeforeMount, computed, watch } from 'v
 import {
     NLayout, NH2, NInputGroup, NButton, NInput, useDialog, NSpin, NIcon,
     NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns,
-    NRadioGroup, NSpace, NRadio, NUpload, NUploadFileList, NPopover
+    NRadioGroup, NSpace, NRadio, NUpload, NPopover
 } from 'naive-ui'
 import { FolderOutline, Add, Remove } from '@vicons/ionicons5'
 import { nanoid } from 'nanoid'
@@ -13,9 +13,10 @@ import Item from '@/models/Item'
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useIndexStore } from '@/store'
-import { get, post, put, del } from '@/net/http'
+import { request, sync_api } from '@/net/http'
 import { Request, Response } from '@/types/net/http'
 import Editor from '@/components/Editor.vue'
+import Project from '@/models/Project'
 
 window.$message = useMessage()
 const store = useIndexStore()
@@ -49,7 +50,6 @@ onBeforeMount(async () => {
     })
 })
 
-const method = ref<string>('GET')
 const options = shallowRef<SelectOption[]>([
     {
         label: 'GET',
@@ -88,6 +88,7 @@ const columns = ref<DataTableColumns<any>>([
                 [
                     h(AInput, {
                         value: row.field,
+                        placeholder: 'Key',
                         onUpdateValue: (val: any) => {
                             row.field = val
                         }
@@ -107,27 +108,9 @@ const columns = ref<DataTableColumns<any>>([
                 [
                     h(AInput, {
                         value: row.value,
+                        placeholder: 'Value',
                         onUpdateValue: (val: any) => {
                             row.value = val
-                        }
-                    })
-                ]
-            )
-        }
-    },
-    {
-        title: 'Describe',
-        key: 'describe',
-        render(row: any, index: number) {
-            return h('div',
-                {
-                    class: 'input'
-                },
-                [
-                    h(AInput, {
-                        value: row.describe,
-                        onUpdateValue: (val: any) => {
-                            row.describe = val
                         }
                     })
                 ]
@@ -145,8 +128,29 @@ const columns = ref<DataTableColumns<any>>([
                 [
                     h(AInput, {
                         value: row.default,
+                        placeholder: 'Default',
                         onUpdateValue: (val: any) => {
                             row.default = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Describe',
+        key: 'describe',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input'
+                },
+                [
+                    h(AInput, {
+                        value: row.describe,
+                        placeholder: 'Describe',
+                        onUpdateValue: (val: any) => {
+                            row.describe = val
                         }
                     })
                 ]
@@ -282,6 +286,7 @@ const columnsForm = ref<DataTableColumns<any>>([
                 [
                     h(AInput, {
                         value: row.field,
+                        placeholder: 'Key',
                         onUpdateValue: (val: any) => {
                             row.field = val
                         }
@@ -299,6 +304,7 @@ const columnsForm = ref<DataTableColumns<any>>([
             if (row.type == 'text') {
                 node = h(AInput, {
                     value: row.value,
+                    placeholder: 'Value',
                     onUpdateValue: (val: any) => {
                         row.value = val
                     }
@@ -375,25 +381,6 @@ const columnsForm = ref<DataTableColumns<any>>([
         }
     },
     {
-        title: 'Describe',
-        key: 'describe',
-        render(row: any, index: number) {
-            return h('div',
-                {
-                    class: 'input'
-                },
-                [
-                    h(AInput, {
-                        value: row.describe,
-                        onUpdateValue: (val: any) => {
-                            row.describe = val
-                        }
-                    })
-                ]
-            )
-        }
-    },
-    {
         title: 'Default',
         key: 'default',
         render(row: any, index: number) {
@@ -404,8 +391,29 @@ const columnsForm = ref<DataTableColumns<any>>([
                 [
                     h(AInput, {
                         value: row.default,
+                        placeholder: 'Default',
                         onUpdateValue: (val: any) => {
                             row.default = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Describe',
+        key: 'describe',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input'
+                },
+                [
+                    h(AInput, {
+                        value: row.describe,
+                        placeholder: 'Describe',
+                        onUpdateValue: (val: any) => {
+                            row.describe = val
                         }
                     })
                 ]
@@ -447,15 +455,7 @@ const columnsForm = ref<DataTableColumns<any>>([
                         size: 'small',
                         quaternary: true,
                         onClick: () => {
-                            data.value.detail.body.form.push({
-                                key: nanoid(),
-                                checked: true,
-                                field: '',
-                                value: '',
-                                describe: '',
-                                default: '',
-                                must: true
-                            })
+                            data.value.detail.body.form.splice(index, 1)
                         }
                     }, {
                         default: () => h(
@@ -479,9 +479,10 @@ const columnsForm = ref<DataTableColumns<any>>([
                         size: 'small',
                         quaternary: true,
                         onClick: () => {
+                            let key = nanoid()
                             if (data.value.detail.tab === 'param') {
                                 data.value.detail.params.push({
-                                    key: nanoid(),
+                                    key: key,
                                     checked: true,
                                     field: '',
                                     value: '',
@@ -489,9 +490,10 @@ const columnsForm = ref<DataTableColumns<any>>([
                                     default: '',
                                     must: true
                                 })
+                                data.value.detail.params_keys.push(key)
                             } else if (data.value.detail.tab === 'header') {
                                 data.value.detail.headers.push({
-                                    key: nanoid(),
+                                    key: key,
                                     checked: true,
                                     field: '',
                                     value: '',
@@ -499,16 +501,20 @@ const columnsForm = ref<DataTableColumns<any>>([
                                     default: '',
                                     must: true
                                 })
+                                data.value.detail.headers_keys.push(key)
                             } else if (data.value.detail.tab === 'body' && data.value.detail.body.type === 'form') {
                                 data.value.detail.body.form.push({
-                                    key: nanoid(),
+                                    key: key,
                                     checked: true,
                                     field: '',
                                     value: '',
+                                    type: 'text',
+                                    file: null,
                                     describe: '',
                                     default: '',
-                                    must: true
+                                    must: true,
                                 })
+                                data.value.detail.body.form_keys.push(key)
                             }
                         }
                     }, {
@@ -543,13 +549,63 @@ const href = computed({
 //     deep: true,
 // })
 const handleSend = async () => {
-    showLoading.value = true
-    let response = await get({
-        protocol: 'http:',
-        method: data.value.detail.method,
-        host: 'localhost',
-        port: '3000',
+    let url = new URL(data.value.detail.path)
+    let search = data.value.detail.params.filter((item: any) => item.checked).map((item: any) => {
+        return `${item.field}=${item.value}`
+    }).join('&')
+    let params = data.value.detail.params.filter((item: any) => item.checked).map((item: any) => {
+        return {
+            field: item.field,
+            value: item.value
+        }
     })
+    let headers = data.value.detail.headers.filter((item: any) => item.checked).map((item: any) => {
+        return {
+            field: item.field,
+            value: item.value
+        }
+    })
+    if (!headers.some((item: any) => item.field.trim().toLower() === 'content-type')) {
+        if (data.value.detail.body.type === 'form') {
+            headers.push({
+                field: 'Content-Type',
+                value: 'application/x-www-form-urlencoded'
+            })
+        } else if (data.value.detail.body.type === 'json') {
+            headers.push({
+                field: 'Content-Type',
+                value: 'application/json'
+            })
+        }
+    }
+    let form = data.value.detail.body.form.filter((item: any) => item.checked).map((item: any) => {
+        let file = []
+        if (item.file) {
+            file = item.file.map((file: any) => {
+                return file.file
+            })
+        }
+        return {
+            field: item.field,
+            value: item.value,
+            value_type: item.type,
+            file: file
+        }
+    })
+    let args: Request = {
+        protocol: url.protocol,
+        method: data.value.detail.method,
+        host: url.hostname,
+        port: url.port,
+        path: url.pathname,
+        params: params,
+        headers: headers,
+        body_type: data.value.detail.body.type,
+        form: form,
+        json: data.value.detail.body.json,
+    }
+    showLoading.value = true
+    let response = await request(args)
     showLoading.value = false
     console.log(response)
 }
@@ -617,12 +673,30 @@ onMounted(async () => {
         if (ev.ctrlKey && ev.key == 's') {
             ev.preventDefault()
             let obj: any = await Item.where({ id: props.item }).obj()
-            data.value.detail.updated = new Date().getTime()
+            obj.last_update = new Date().getTime()
             obj.detail = JSON.parse(JSON.stringify(data.value.detail))
             obj.save()
         }
     })
 })
+
+const handleSync = async () => {
+    let item: any = await Item.where({ id: props.item }).get()
+    let project: any = await Project.where({ id: item.project }).get()
+    item.detail = JSON.stringify(data.value.detail)
+    let res: any = await sync_api({ api: { item: item, project: project }, server: 'http://127.0.0.1:8080' })
+    console.log(res)
+    if (res.data.project._id != project._id) {
+        let project_obj: any = await Project.where({ id: item.project }).obj()
+        project_obj._id = res.data.project._id
+        project_obj.save()
+    }
+    if (res.data.item._id != item._id) {
+        let item_obj: any = await Item.where({ id: props.item }).obj()
+        item_obj._id = res.data.item._id
+        item_obj.save()
+    }
+}
 </script>
 
 <template>
@@ -630,11 +704,13 @@ onMounted(async () => {
         <div ref="topRef" class="top" :style="`height: ${height - 2}px; cursor: ${resizeable ? 'ns-resize' : cursor}`">
             <div class="title" style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="padding-left: 10px">{{ data.label }}</span>
-                <span>env</span>
+                <span>
+                    <n-button secondary @click="handleSync">SYNC</n-button>
+                </span>
             </div>
             <div class="location">
                 <n-input-group>
-                    <n-select v-model:value="method" :options="options" style="width: 150px" />
+                    <n-select v-model:value="data.detail.method" :options="options" style="width: 150px" />
                     <n-input v-model:value="href" placeholder="Location" />
                     <n-button secondary @click="handleSend">SEND</n-button>
                 </n-input-group>

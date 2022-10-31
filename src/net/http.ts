@@ -1,23 +1,9 @@
 import { invoke } from "@tauri-apps/api/tauri"
 import { Request, Response } from "@/types/net/http"
 
-const get = async (request: Request) => {
-    let res = await invoke<Response>('get', { request })
-    return res
-}
-
-const post = async (request: Request) => {
-    let res = await invoke<Response>('post', { request })
-    return res
-}
-
-const put = async (request: Request) => {
-    let res = await invoke<Response>('put', { request })
-    return res
-}
-
-const del = async (request: Request) => {
-    let res = await invoke<Response>('delete', { request })
+const request = async (request: Request) => {
+    console.log('get', request)
+    let res = await invoke<Response>('request', { request })
     return res
 }
 
@@ -26,4 +12,9 @@ const start_login_server = async () => {
     return res
 }
 
-export { get, post, put, del, start_login_server }
+const sync_api = async (args: any) => {
+    let res = await invoke('sync_api', args)
+    return res
+}
+
+export { request, start_login_server, sync_api }

@@ -125,6 +125,15 @@ const handleNewProject = async () => {
     showNewProject.value = false
 }
 
+const handleDeleteProject = async (id: number) => {
+    let project = projects.value.find((p: any) => p.id == id)
+    if (project) {
+        await Project.where({ id: id }).delete()
+        projects.value = projects.value.filter((item) => item.id != id)
+        await handleLoadProjects()
+    }
+}
+
 onBeforeMount(async () => {
     await create()
     try {
@@ -351,7 +360,8 @@ const handleLogin = async () => {
                                     <n-layout position="absolute" style="background: #21252b; color: #fff"
                                         :native-scrollbar="false" content-style="padding: 10px;">
                                         <component v-for="project in projects" :is="ProjectVue" :project="project"
-                                            @handleOpenTab="handleOpenTab" @handleCloseTab="handleCloseTab" />
+                                            @handleOpenTab="handleOpenTab" @handleCloseTab="handleCloseTab"
+                                            @handleDeleteProject="handleDeleteProject" />
                                     </n-layout>
                                 </div>
                                 <div class="btn-side">
