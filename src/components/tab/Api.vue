@@ -43,6 +43,7 @@ const props = defineProps<{
 }>()
 const emits = defineEmits<{
     // (e: 'handle', id: any): void
+    (e: 'handleCloseTab', ev: null, id: string): void
 }>()
 
 onBeforeMount(async () => {
@@ -50,7 +51,6 @@ onBeforeMount(async () => {
 
     let res = await Item.where({ id: props.item }).get()
     data.value = res
-    console.log(res)
 
     data.value.request.body.form = data.value.request.body.form.map((item: any) => {
         item.file = null

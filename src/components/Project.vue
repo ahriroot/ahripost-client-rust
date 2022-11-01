@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { h, ref, VNodeChild, onBeforeMount } from 'vue'
-import { NTree, NIcon, TreeOption, NDropdown, useDialog } from 'naive-ui'
+import { NTree, NIcon, TreeOption, NDropdown, NSpin, useDialog } from 'naive-ui'
 import { FolderOutline, ChevronForward, CodeWorkingOutline } from '@vicons/ionicons5'
 import { nanoid } from 'nanoid'
 
@@ -32,6 +32,8 @@ const data = ref<TreeOption[]>([])
 
 const { t } = useI18n()
 
+const loading = ref(false)
+
 const data2tree = async (data: any[], parent: number) => {
     let tmp: any[] = []
     for (let index = 0; index < data.length; index++) {
@@ -59,7 +61,9 @@ const data2tree = async (data: any[], parent: number) => {
     return tmp
 }
 
+const key = ref(0)
 const handleLoadProject = async () => {
+    loading.value = true
     let items = (await Item.where({ 'project': props.project.id }).order({ id: 1 }).all()) as any[]
     let res = await data2tree(items, 0)
 
@@ -71,6 +75,7 @@ const handleLoadProject = async () => {
         edit: false,
         children: res,
     }]
+    loading.value = false
 }
 
 onBeforeMount(async () => {
@@ -260,8 +265,8 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     if (expandedKeys.value.includes(option.key as string)) {
                                         expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
                                     }
-                                    await handleLoadProject()
                                     showContextmenu.value = false
+                                    await handleLoadProject()
                                 } else {
                                     dialog.warning({
                                         title: t('common.delete'),
@@ -280,8 +285,8 @@ const nodeProps = ({ option }: { option: any }): any => {
                                             if (expandedKeys.value.includes(option.key as string)) {
                                                 expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
                                             }
-                                            await handleLoadProject()
                                             showContextmenu.value = false
+                                            await handleLoadProject()
                                         }
                                     })
                                 }
@@ -316,12 +321,12 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     token: store.config.token || ''
                                 })
                                 let items_upload: any[] = []
-                                sc.data.items_upload.forEach(async (key: string) => {
-                                    let api: any = await Item.where({ key: key }).get()
+                                for (let i = 0; i < sc.data.items_upload.length; i++) {
+                                    let api: any = await Item.where({ key: sc.data.items_upload[i] }).get()
                                     api.request = JSON.stringify(api.request)
                                     api.response = JSON.stringify(api.response)
                                     items_upload.push(api)
-                                })
+                                }
                                 let sd: any = await sync_data({
                                     data: {
                                         items_upload: items_upload,
@@ -331,22 +336,37 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     server: 'http://127.0.0.1:8080',
                                     token: store.config.token || ''
                                 })
-                                sd.data.forEach(async (item: any) => {
-                                    let api: any = await Item.where({ key: item.key }).obj()
-                                    api.request = item.request ? JSON.parse(item.request) : null
-                                    api.response = item.response ? JSON.parse(item.response) : null
-                                    api.label = item.label
-                                    api.type = item.type
-                                    api.from = item.from
-                                    api.project = item.project
-                                    api.parent = item.parent
-                                    api.last_sync = item.last_sync
-                                    api.last_update = item.last_update
-                                    console.log(api)
-                                    await api.save()
-                                })
-                                await handleLoadProject()
+                                for (let i = 0; i < sd.data.length; i++) {
+                                    const element = sd.data[i]
+                                    let api = (await Item.where({ key: sd.data[i].key }).obj() as Item)
+                                    if (api && api.key) {
+                                        api.request = sd.data[i].request ? JSON.parse(sd.data[i].request) : null
+                                        api.response = sd.data[i].response ? JSON.parse(sd.data[i].response) : null
+                                        api.label = sd.data[i].label
+                                        api.type = sd.data[i].type
+                                        api.from = sd.data[i].from
+                                        api.project = sd.data[i].project_id
+                                        api.parent = sd.data[i].parent
+                                        api.last_sync = sd.data[i].last_sync
+                                        api.last_update = sd.data[i].last_update
+                                        await api.save()
+                                    } else {
+                                        let api = new Item()
+                                        api.key = sd.data[i].key
+                                        api.request = sd.data[i].request ? JSON.parse(sd.data[i].request) : null
+                                        api.response = sd.data[i].response ? JSON.parse(sd.data[i].response) : null
+                                        api.label = sd.data[i].label
+                                        api.type = sd.data[i].type
+                                        api.from = sd.data[i].from
+                                        api.project = sd.data[i].project_id
+                                        api.parent = sd.data[i].parent
+                                        api.last_sync = sd.data[i].last_sync
+                                        api.last_update = sd.data[i].last_update
+                                        await api.save()
+                                    }
+                                }
                                 showContextmenu.value = false
+                                await handleLoadProject()
                             }
                         }
                     })
@@ -389,8 +409,8 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     if (expandedKeys.value.includes(option.key as string)) {
                                         expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
                                     }
-                                    await handleLoadProject()
                                     showContextmenu.value = false
+                                    await handleLoadProject()
                                 } else {
                                     dialog.warning({
                                         title: t('common.delete'),
@@ -406,8 +426,8 @@ const nodeProps = ({ option }: { option: any }): any => {
                                             if (expandedKeys.value.includes(option.key as string)) {
                                                 expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
                                             }
-                                            await handleLoadProject()
                                             showContextmenu.value = false
+                                            await handleLoadProject()
                                         }
                                     })
                                 }
@@ -476,11 +496,13 @@ const handleDrop = async ({ node, dragNode, dropPosition }: TreeDropInfo) => {
 
 <template>
     <div>
-        <n-dropdown trigger="manual" size="small" placement="bottom-start" :show="showContextmenu"
-            :options="(optionsContextmenu as any)" :x="xPos" :y="yPos" @clickoutside="showContextmenu = false" />
-        <n-tree :data="data" :selectable="false" @update:expanded-keys="handleExpand" :node-props="nodeProps"
-            expand-on-click :render-switcher-icon="renderSwitcherIcon" :default-expanded-keys="expandedKeys"
-            :render-label="renderLabel" draggable @drop="handleDrop" />
+        <n-spin :show="loading">
+            <n-dropdown trigger="manual" size="small" placement="bottom-start" :show="showContextmenu"
+                :options="(optionsContextmenu as any)" :x="xPos" :y="yPos" @clickoutside="showContextmenu = false" />
+            <n-tree :key="key" :data="data" :selectable="false" @update:expanded-keys="handleExpand"
+                :node-props="nodeProps" expand-on-click :render-switcher-icon="renderSwitcherIcon"
+                :default-expanded-keys="expandedKeys" :render-label="renderLabel" draggable @drop="handleDrop" />
+        </n-spin>
     </div>
 </template>
 
