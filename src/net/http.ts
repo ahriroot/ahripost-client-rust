@@ -13,9 +13,23 @@ const start_login_server = async () => {
 }
 
 const sync_api = async (args: any) => {
-    console.log(args)
     let res = await invoke('sync_api', args)
     return res
 }
 
-export { request, start_login_server, sync_api }
+const load_project = async (args: any) => {
+    let res = await invoke('load_project', args)
+    return res
+}
+
+const sync_check = async (args: any) => {
+    let res = await invoke('sync_check', args)
+    return res
+}
+
+const sync_data = async (args: any) => {
+    let res = await invoke('sync_data', args)
+    return res
+}
+
+export { request, start_login_server, sync_api, load_project, sync_check, sync_data }

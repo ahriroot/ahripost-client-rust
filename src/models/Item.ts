@@ -17,13 +17,15 @@ class Item extends BaseModel {
     key = StringField({ verbose_name: '唯一 id', nullable: false, unique: true, index: 'name_index' })
     label = StringField({ nullable: false, default: 'New Api' })
     type = StringField({ nullable: false, index: 'type_index' })
+    from = StringField({ nullable: false, default: 'client' })
     project = InteagerField({ nullable: false, default: 0 })
     parent = InteagerField({ nullable: false, default: 0 })
     user = InteagerField({ nullable: false, default: 0 })
     last_sync = InteagerField({ nullable: false, default: 0 })
     last_update = InteagerField({ nullable: false, default: 0 })
-    detail = ObjectField({
+    request = ObjectField({
         nullable: true, default: {
+            describe: '',
             method: 'GET',
             protocol: '',
             host: '',
@@ -40,6 +42,18 @@ class Item extends BaseModel {
                 type: 'json',
                 form_keys: [],
                 form: [],
+                json: `{}`
+            }
+        }
+    })
+    response = ObjectField({
+        nullable: true, default: {
+            status: '',
+            statusText: '',
+            headers: [],
+            body: {
+                type: 'json',
+                html: [],
                 json: `{}`
             }
         }

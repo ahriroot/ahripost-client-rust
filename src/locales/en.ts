@@ -6,6 +6,8 @@ const en = {
         confirm: 'Confirm',
         delete: 'Delete',
         open: 'Open',
+        load: 'Load',
+        sync: 'Sync',
     },
     project: {
         new: 'New Project',

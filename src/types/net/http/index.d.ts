@@ -26,4 +26,9 @@ export interface Request extends InvokeArgs {
 }
 
 export interface Response {
+    body: string
+    canonical_reason: string
+    headers: any[]
+    status: number
+    version: string
 }

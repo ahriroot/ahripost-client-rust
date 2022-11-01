@@ -22,13 +22,20 @@ window.$message = useMessage()
 const store = useIndexStore()
 const dialog = useDialog()
 const data = ref<any>({
-    detail: {
+    request: {
         body: {
             type: 'form',
             form: [],
             json: ''
+        },
+    },
+    response: {
+        body: {
+            type: 'form',
+            html: '',
+            json: ''
         }
-    }
+    },
 })
 
 const props = defineProps<{
@@ -43,8 +50,9 @@ onBeforeMount(async () => {
 
     let res = await Item.where({ id: props.item }).get()
     data.value = res
+    console.log(res)
 
-    data.value.detail.body.form = data.value.detail.body.form.map((item: any) => {
+    data.value.request.body.form = data.value.request.body.form.map((item: any) => {
         item.file = null
         return item
     })
@@ -192,7 +200,7 @@ const columns = ref<DataTableColumns<any>>([
                         size: 'small',
                         quaternary: true,
                         onClick: () => {
-                            data.value.detail.body.form.push({
+                            data.value.request.body.form.push({
                                 key: nanoid(),
                                 checked: true,
                                 field: '',
@@ -224,8 +232,8 @@ const columns = ref<DataTableColumns<any>>([
                         size: 'small',
                         quaternary: true,
                         onClick: () => {
-                            if (data.value.detail.tab === 'param') {
-                                data.value.detail.params.push({
+                            if (data.value.request.tab === 'param') {
+                                data.value.request.params.push({
                                     key: nanoid(),
                                     checked: true,
                                     field: '',
@@ -234,8 +242,8 @@ const columns = ref<DataTableColumns<any>>([
                                     default: '',
                                     must: true
                                 })
-                            } else if (data.value.detail.tab === 'header') {
-                                data.value.detail.headers.push({
+                            } else if (data.value.request.tab === 'header') {
+                                data.value.request.headers.push({
                                     key: nanoid(),
                                     checked: true,
                                     field: '',
@@ -244,8 +252,8 @@ const columns = ref<DataTableColumns<any>>([
                                     default: '',
                                     must: true
                                 })
-                            } else if (data.value.detail.tab === 'body' && data.value.detail.body.type === 'form') {
-                                data.value.detail.body.form.push({
+                            } else if (data.value.request.tab === 'body' && data.value.request.body.type === 'form') {
+                                data.value.request.body.form.push({
                                     key: nanoid(),
                                     checked: true,
                                     field: '',
@@ -316,7 +324,6 @@ const columnsForm = ref<DataTableColumns<any>>([
                     defaultUpload: false,
                     showFileList: false,
                     onUpdateFileList: (val: any) => {
-                        console.log(data.value.detail.body.form)
                         row.file = val
                     }
                 }, {
@@ -371,7 +378,6 @@ const columnsForm = ref<DataTableColumns<any>>([
                             value: 'file'
                         }],
                         onUpdateValue: (val: any) => {
-                            console.log(val)
                             row.type = val
                         }
                     }),
@@ -455,7 +461,7 @@ const columnsForm = ref<DataTableColumns<any>>([
                         size: 'small',
                         quaternary: true,
                         onClick: () => {
-                            data.value.detail.body.form.splice(index, 1)
+                            data.value.request.body.form.splice(index, 1)
                         }
                     }, {
                         default: () => h(
@@ -480,8 +486,8 @@ const columnsForm = ref<DataTableColumns<any>>([
                         quaternary: true,
                         onClick: () => {
                             let key = nanoid()
-                            if (data.value.detail.tab === 'param') {
-                                data.value.detail.params.push({
+                            if (data.value.request.tab === 'param') {
+                                data.value.request.params.push({
                                     key: key,
                                     checked: true,
                                     field: '',
@@ -490,9 +496,9 @@ const columnsForm = ref<DataTableColumns<any>>([
                                     default: '',
                                     must: true
                                 })
-                                data.value.detail.params_keys.push(key)
-                            } else if (data.value.detail.tab === 'header') {
-                                data.value.detail.headers.push({
+                                data.value.request.params_keys.push(key)
+                            } else if (data.value.request.tab === 'header') {
+                                data.value.request.headers.push({
                                     key: key,
                                     checked: true,
                                     field: '',
@@ -501,9 +507,9 @@ const columnsForm = ref<DataTableColumns<any>>([
                                     default: '',
                                     must: true
                                 })
-                                data.value.detail.headers_keys.push(key)
-                            } else if (data.value.detail.tab === 'body' && data.value.detail.body.type === 'form') {
-                                data.value.detail.body.form.push({
+                                data.value.request.headers_keys.push(key)
+                            } else if (data.value.request.tab === 'body' && data.value.request.body.type === 'form') {
+                                data.value.request.body.form.push({
                                     key: key,
                                     checked: true,
                                     field: '',
@@ -514,7 +520,7 @@ const columnsForm = ref<DataTableColumns<any>>([
                                     default: '',
                                     must: true,
                                 })
-                                data.value.detail.body.form_keys.push(key)
+                                data.value.request.body.form_keys.push(key)
                             }
                         }
                     }, {
@@ -535,50 +541,50 @@ const columnsForm = ref<DataTableColumns<any>>([
 const showLoading = ref<boolean>(false)
 const href = computed({
     get() {
-        return data.value.detail?.path || ''
+        return data.value.request?.path || ''
     },
     set(val: string) {
-        data.value.detail.path = val
+        data.value.request.path = val
     }
 })
 
-// watch(() => data.value.detail?.params, async (_) => {
+// watch(() => data.value.request?.params, async (_) => {
 
 // }, {
 //     immediate: false,
 //     deep: true,
 // })
 const handleSend = async () => {
-    let url = new URL(data.value.detail.path)
-    let search = data.value.detail.params.filter((item: any) => item.checked).map((item: any) => {
+    let url = new URL(data.value.request.path)
+    let search = data.value.request.params.filter((item: any) => data.value.request.params_keys.includes(item.key)).map((item: any) => {
         return `${item.field}=${item.value}`
     }).join('&')
-    let params = data.value.detail.params.filter((item: any) => item.checked).map((item: any) => {
+    let params = data.value.request.params.filter((item: any) => data.value.request.params_keys.includes(item.key)).map((item: any) => {
         return {
             field: item.field,
             value: item.value
         }
     })
-    let headers = data.value.detail.headers.filter((item: any) => item.checked).map((item: any) => {
+    let headers = data.value.request.headers.filter((item: any) => data.value.request.headers_keys.includes(item.key)).map((item: any) => {
         return {
             field: item.field,
             value: item.value
         }
     })
-    if (!headers.some((item: any) => item.field.trim().toLower() === 'content-type')) {
-        if (data.value.detail.body.type === 'form') {
+    if (!headers.some((item: any) => item.field.trim().toLowerCase() === 'content-type')) {
+        if (data.value.request.body.type === 'form') {
             headers.push({
                 field: 'Content-Type',
                 value: 'application/x-www-form-urlencoded'
             })
-        } else if (data.value.detail.body.type === 'json') {
+        } else if (data.value.request.body.type === 'json') {
             headers.push({
                 field: 'Content-Type',
                 value: 'application/json'
             })
         }
     }
-    let form = data.value.detail.body.form.filter((item: any) => item.checked).map((item: any) => {
+    let form = data.value.request.body.form.filter((item: any) => data.value.request.body.form_keys.includes(item.key)).map((item: any) => {
         let file = []
         if (item.file) {
             file = item.file.map((file: any) => {
@@ -594,23 +600,34 @@ const handleSend = async () => {
     })
     let args: Request = {
         protocol: url.protocol,
-        method: data.value.detail.method,
+        method: data.value.request.method,
         host: url.hostname,
         port: url.port,
         path: url.pathname,
         params: params,
         headers: headers,
-        body_type: data.value.detail.body.type,
+        body_type: data.value.request.body.type,
         form: form,
-        json: data.value.detail.body.json,
+        json: data.value.request.body.json,
     }
     showLoading.value = true
     let response = await request(args)
     showLoading.value = false
+
     console.log(response)
+
+    data.value.response.status = response.status
+    data.value.response.statusText = response.canonical_reason
+    data.value.response.headers = response.headers
+    data.value.response.body.json = response.body
+
+
+    if (responseRef.value && data.value.response?.body) {
+        responseRef.value.setValue(response.body || '')
+    }
 }
-const handleChangeType = (val: string) => {
-    editorRef.value.setValue(data.value.detail.body.json || '')
+const handleChangeType = (_: string) => {
+    requestRef.value.setValue(data.value.request.body.json || '')
 }
 
 const tabApiRef = shallowRef<HTMLElement | null>(null)
@@ -621,7 +638,8 @@ const height = ref(store.config.apiAreaHeight)
 const oldHeight = ref(250)
 const cursor = ref('default')
 const currentMoveY = ref(0)
-const editorRef = shallowRef<any>(null)
+const requestRef = shallowRef<any>(null)
+const responseRef = shallowRef<any>(null)
 onMounted(async () => {
     if (topRef.value && bottomRef.value) {
         topRef.value.addEventListener('mousedown', (ev) => {
@@ -664,8 +682,11 @@ onMounted(async () => {
         })
     }
     setTimeout(() => {
-        if (editorRef.value && data.value.detail?.body) {
-            editorRef.value.setValue(data.value.detail.body.json || '')
+        if (requestRef.value && data.value.request?.body) {
+            requestRef.value.setValue(data.value.request.body.json || '')
+        }
+        if (responseRef.value && data.value.response?.body) {
+            responseRef.value.setValue(data.value.response.body.json || '')
         }
     }, 1000)
 
@@ -674,32 +695,60 @@ onMounted(async () => {
             ev.preventDefault()
             let obj: any = await Item.where({ id: props.item }).obj()
             obj.last_update = new Date().getTime()
-            obj.detail = JSON.parse(JSON.stringify(data.value.detail))
+            obj.request = JSON.parse(JSON.stringify(data.value.request))
+            obj.response = JSON.parse(JSON.stringify(data.value.response))
             obj.save()
         }
     })
 })
 
+const handleSyncItem = async (id: number) => {
+    let api: any = await Item.where({ id: id }).get()
+    api.request = JSON.stringify(api.request)
+    api.response = JSON.stringify(api.response)
+    let project: any = await Project.where({ id: api.project }).get()
+    let current_time = new Date().getTime()
+    if (api.last_sync < current_time) {
+        let res: any = await sync_api({
+            api: { item: api, project: project },
+            server: 'http://127.0.0.1:8080',
+            token: store.config.token || ''
+        })
+        console.log(res)
+        if (res.data.project._id != project._id) {
+            let project_obj: any = await Project.where({ id: api.project }).obj()
+            project_obj._id = res.data.project._id
+            project_obj.last_sync = current_time
+            project_obj.save()
+        }
+        if (res.data.item._id != api._id) {
+            let item_obj: any = await Item.where({ id: props.item }).obj()
+            item_obj._id = res.data.item._id
+            item_obj.last_sync = current_time
+            item_obj.save()
+        }
+    }
+}
+
 const handleSync = async () => {
+
+    let obj: any = await Item.where({ id: props.item }).obj()
+    obj.last_sync = new Date().getTime()
+    obj.request = JSON.parse(JSON.stringify(data.value.request))
+    obj.response = JSON.parse(JSON.stringify(data.value.response))
+    obj.save()
+
+    let ids: number[] = []
     let item: any = await Item.where({ id: props.item }).get()
-    let project: any = await Project.where({ id: item.project }).get()
-    item.detail = JSON.stringify(data.value.detail)
-    let res: any = await sync_api({
-        api: { item: item, project: project },
-        server: 'http://127.0.0.1:8080',
-        token: store.config.token || ''
+    ids.unshift(item.id)
+
+    while (item.parent != 0) {
+        item = await Item.where({ id: item.parent }).get()
+        ids.unshift(item.id)
+    }
+    ids.forEach(async (id) => {
+        await handleSyncItem(id)
     })
-    console.log(res)
-    if (res.data.project._id != project._id) {
-        let project_obj: any = await Project.where({ id: item.project }).obj()
-        project_obj._id = res.data.project._id
-        project_obj.save()
-    }
-    if (res.data.item._id != item._id) {
-        let item_obj: any = await Item.where({ id: props.item }).obj()
-        item_obj._id = res.data.item._id
-        item_obj.save()
-    }
 }
 </script>
 
@@ -707,19 +756,22 @@ const handleSync = async () => {
     <div class="tab-api" ref="tabApiRef" tabindex="1">
         <div ref="topRef" class="top" :style="`height: ${height - 2}px; cursor: ${resizeable ? 'ns-resize' : cursor}`">
             <div class="title" style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="padding-left: 10px">{{ data.label }}</span>
-                <span>
-                    <n-button secondary @click="handleSync">SYNC</n-button>
-                </span>
+                <n-input-group>
+                    <n-input v-model:value="data.label" placeholder="Label" />
+                    <n-input v-model:value="data.request.describe" placeholder="Describe" />
+                    <span>
+                        <n-button secondary @click="handleSync">SYNC</n-button>
+                    </span>
+                </n-input-group>
             </div>
             <div class="location">
                 <n-input-group>
-                    <n-select v-model:value="data.detail.method" :options="options" style="width: 150px" />
+                    <n-select v-model:value="data.request.method" :options="options" style="width: 150px" />
                     <n-input v-model:value="href" placeholder="Location" />
                     <n-button secondary @click="handleSend">SEND</n-button>
                 </n-input-group>
             </div>
-            <n-tabs style="top: 72px; bottom: 6px" v-model:value="data.detail.tab">
+            <n-tabs style="top: 72px; bottom: 6px" v-model:value="data.request.tab">
                 <n-tab-pane name="header" display-directive="show">
                     <template #tab>
                         <div style="padding: 0 10px">
@@ -728,8 +780,8 @@ const handleSync = async () => {
                     </template>
                     <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b"
                         :native-scrollbar="false">
-                        <n-data-table v-if="data.detail?.headers" size="small" :columns="columns"
-                            v-model:checked-row-keys="data.detail.headers_keys" :data="data.detail.headers"
+                        <n-data-table v-if="data.request?.headers" size="small" :columns="columns"
+                            v-model:checked-row-keys="data.request.headers_keys" :data="data.request.headers"
                             :single-line="false" :bordered="false" />
                     </n-layout>
                 </n-tab-pane>
@@ -741,8 +793,8 @@ const handleSync = async () => {
                     </template>
                     <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b"
                         :native-scrollbar="false">
-                        <n-data-table v-if="data.detail?.params" size="small" :columns="columns"
-                            v-model:checked-row-keys="data.detail.params_keys" :data="data.detail.params"
+                        <n-data-table v-if="data.request?.params" size="small" :columns="columns"
+                            v-model:checked-row-keys="data.request.params_keys" :data="data.request.params"
                             :single-line="false" :bordered="false" />
                     </n-layout>
                 </n-tab-pane>
@@ -752,8 +804,9 @@ const handleSync = async () => {
                             <span>Body</span>
                         </div>
                     </template>
-                    <n-radio-group v-model:value="data.detail.body.type" style="position: absolute; top: 6px; left: 4px"
-                        name="radiogroup" @update:value="handleChangeType">
+                    <n-radio-group v-model:value="data.request.body.type"
+                        style="position: absolute; top: 6px; left: 4px" name="radiogroup"
+                        @update:value="handleChangeType">
                         <n-space>
                             <n-radio v-for="song in [
                                 { label: 'None', value: 'none' },
@@ -767,16 +820,16 @@ const handleSync = async () => {
                             </n-radio>
                         </n-space>
                     </n-radio-group>
-                    <div v-show="data.detail.body.type == 'none'"></div>
-                    <div v-show="data.detail.body.type == 'json'"
+                    <div v-show="data.request.body.type == 'none'"></div>
+                    <div v-show="data.request.body.type == 'json'"
                         style="position: absolute; top: 30px; left: 0; bottom: 0; right: 0">
-                        <Editor ref="editorRef" @change="(val) => data.detail.body.json = val"
-                            :value="data.detail.body.json" />
+                        <Editor ref="requestRef" @change="(val) => data.request.body.json = val"
+                            :value="data.request.body.json" />
                     </div>
-                    <n-layout v-show="data.detail.body.type == 'form'" position="absolute"
+                    <n-layout v-show="data.request.body.type == 'form'" position="absolute"
                         style="top: 30px; bottom: 0; background: #21252b" :native-scrollbar="false">
-                        <n-data-table v-if="data.detail?.params" size="small" :columns="columnsForm"
-                            v-model:checked-row-keys="data.detail.body.form_keys" :data="data.detail.body.form"
+                        <n-data-table v-if="data.request?.params" size="small" :columns="columnsForm"
+                            v-model:checked-row-keys="data.request.body.form_keys" :data="data.request.body.form"
                             :single-line="false" :bordered="false" />
                     </n-layout>
                 </n-tab-pane>
@@ -785,23 +838,8 @@ const handleSync = async () => {
         <div ref="bottomRef" class="bottom" :style="`top: ${height}px`">
             <n-spin :show="showLoading">
                 <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b" :native-scrollbar="false">
-                    <div class="result">
-                        {{ data }}
-                    </div>
-                    <n-h2>12</n-h2>
-                    <n-h2>12</n-h2>
-                    <n-h2>12</n-h2>
-                    <n-h2>12</n-h2>
-                    <n-h2>12</n-h2>
-                    <n-h2>12</n-h2>
-                    <n-h2>12</n-h2>
-                    <n-h2>12</n-h2>
-                    <n-h2>12</n-h2>
-                    <n-h2>12</n-h2>
-                    <n-h2>12</n-h2>
-                    <iframe border="0" style="border: none">
-                        <p>123</p>
-                    </iframe>
+                    <Editor ref="responseRef" @change="(val) => data.response.body.json = val"
+                        :value="data.response.body.json" />
                 </n-layout>
             </n-spin>
         </div>

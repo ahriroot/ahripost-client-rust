@@ -11,6 +11,8 @@ import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useIndexStore } from '@/store'
 import { OpenTabMesagae } from '@/types/store'
+import Project from '@/models/Project'
+import { sync_check, sync_data } from '@/net/http'
 
 window.$message = useMessage()
 const store = useIndexStore()
@@ -92,7 +94,7 @@ const renderLabel = ({ option, checked, selected }: TreeRenderProps): VNodeChild
             },
             onBlur: async () => {
                 let tmp = (await Item.where({ id: option.value }).obj() as Item)
-                if (tmp && tmp.id) {
+                if (tmp && tmp.key) {
                     tmp.label = option.label
                     tmp.last_update = new Date().getTime()
                     await tmp.save()
@@ -198,6 +200,8 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 item.project = props.project.id
                                 item.parent = option.type == 'project' ? 0 : option.value
                                 item.last_update = new Date().getTime()
+                                item.request = null
+                                item.response = null
                                 let id = await item.save()
 
                                 if (expandedKeys.value.indexOf(option.key as string) == -1) {
@@ -247,6 +251,10 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     if (option.type == 'project') {
                                         emits('handleDeleteProject', props.project.id)
                                     } else {
+                                        let obj: any = await Item.where({ id: option.value }).obj()
+                                        if (obj.last_sync) {
+                                            // TODO: 删除远程
+                                        }
                                         await Item.where({ id: option.value }).delete()
                                     }
                                     if (expandedKeys.value.includes(option.key as string)) {
@@ -263,6 +271,10 @@ const nodeProps = ({ option }: { option: any }): any => {
                                             if (option.type == 'project') {
                                                 emits('handleDeleteProject', props.project.id)
                                             } else {
+                                                let obj: any = await Item.where({ id: option.value }).obj()
+                                                if (obj.last_sync) {
+                                                    // TODO: 删除远程
+                                                }
                                                 await Item.where({ id: option.value }).delete()
                                             }
                                             if (expandedKeys.value.includes(option.key as string)) {
@@ -277,6 +289,68 @@ const nodeProps = ({ option }: { option: any }): any => {
                         }
                     }
                 ]
+                if (option.type == 'project') {
+                    optionsContextmenu.value.unshift({
+                        label: t('common.sync'),
+                        key: 'syncs',
+                        props: {
+                            onClick: async () => {
+                                let formApis: { key: any; project: any; last_update: any; last_sync: any }[] = []
+                                let items: any[] = (await Item.where({ project: props.project.id }).all()) as any[]
+                                items.forEach(async (item: any) => {
+                                    formApis.push({
+                                        key: item.key,
+                                        project: item.project,
+                                        last_update: item.last_update,
+                                        last_sync: item.last_sync,
+                                    })
+                                })
+                                let tmpProject: any = await Project.where({ id: props.project.id }).get()
+                                let formProject = {
+                                    key: tmpProject.key,
+                                    name: tmpProject.name,
+                                }
+                                let sc: any = await sync_check({
+                                    data: { apis: formApis, project: formProject },
+                                    server: 'http://127.0.0.1:8080',
+                                    token: store.config.token || ''
+                                })
+                                let items_upload: any[] = []
+                                sc.data.items_upload.forEach(async (key: string) => {
+                                    let api: any = await Item.where({ key: key }).get()
+                                    api.request = JSON.stringify(api.request)
+                                    api.response = JSON.stringify(api.response)
+                                    items_upload.push(api)
+                                })
+                                let sd: any = await sync_data({
+                                    data: {
+                                        items_upload: items_upload,
+                                        items_download: sc.data.items_download,
+                                        project: formProject
+                                    },
+                                    server: 'http://127.0.0.1:8080',
+                                    token: store.config.token || ''
+                                })
+                                sd.data.forEach(async (item: any) => {
+                                    let api: any = await Item.where({ key: item.key }).obj()
+                                    api.request = item.request ? JSON.parse(item.request) : null
+                                    api.response = item.response ? JSON.parse(item.response) : null
+                                    api.label = item.label
+                                    api.type = item.type
+                                    api.from = item.from
+                                    api.project = item.project
+                                    api.parent = item.parent
+                                    api.last_sync = item.last_sync
+                                    api.last_update = item.last_update
+                                    console.log(api)
+                                    await api.save()
+                                })
+                                await handleLoadProject()
+                                showContextmenu.value = false
+                            }
+                        }
+                    })
+                }
                 xPos.value = e.clientX
                 yPos.value = e.clientY
                 showContextmenu.value = true
@@ -306,6 +380,10 @@ const nodeProps = ({ option }: { option: any }): any => {
                         props: {
                             onClick: async () => {
                                 if (store.config?.deleteNoConfirm) {
+                                    let obj: any = await Item.where({ id: option.value }).obj()
+                                    if (obj.last_sync) {
+                                        // TODO: 删除远程
+                                    }
                                     await Item.where({ id: option.value }).delete()
                                     emits('handleCloseTab', null, option.key)
                                     if (expandedKeys.value.includes(option.key as string)) {
@@ -319,6 +397,10 @@ const nodeProps = ({ option }: { option: any }): any => {
                                         content: `${t('copywriting.deleteApi')} ${option.label} ?`,
                                         positiveText: t('common.delete'),
                                         onPositiveClick: async () => {
+                                            let obj: any = await Item.where({ id: option.value }).obj()
+                                            if (obj.last_sync) {
+                                                // TODO: 删除远程
+                                            }
                                             await Item.where({ id: option.value }).delete()
                                             emits('handleCloseTab', null, option.key)
                                             if (expandedKeys.value.includes(option.key as string)) {

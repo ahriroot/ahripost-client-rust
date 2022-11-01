@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount, onMounted, shallowRef, ref } from 'vue'
 import {
-    darkTheme, NConfigProvider, NGlobalStyle, NIcon, NLayout,
+    darkTheme, NConfigProvider, NGlobalStyle, NIcon, NLayout, NDivider,
     NButton, NModal, NSelect, NInput, NSpace, NInputGroup,
     NTabs, NTabPane, NLoadingBarProvider, NMessageProvider, NDialogProvider,
     NCheckbox, zhCN, enUS
@@ -20,7 +20,7 @@ import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
 import { relaunch } from '@tauri-apps/api/process'
 import create from '@/models'
 import { OpenTabMesagae } from '@/types/store'
-import { start_login_server } from '@/net/http'
+import { load_project, start_login_server } from '@/net/http'
 import { open } from '@tauri-apps/api/shell'
 
 
@@ -282,6 +282,45 @@ const handleLogin = async () => {
         await open('http://127.0.0.1:3000')
     }
 }
+
+const valueSelectProject = ref<number | undefined>()
+const optionsRemoteProject = ref<{ label: string; value: number }[]>([])
+const remoteProjects = ref<Project[]>([])
+const handleLoadProject = async () => {
+    let res: any = await load_project({
+        server: 'http://127.0.0.1:8080',
+        token: store.config.token || ''
+    })
+    remoteProjects.value = res.data.projects
+    remoteProjects.value.forEach((item: any) => {
+        optionsRemoteProject.value.push({
+            value: item._id,
+            label: item.name
+        })
+    })
+    if (optionsRemoteProject.value.length > 0) {
+        valueSelectProject.value = optionsRemoteProject.value[0].value
+    }
+}
+const handleDownloadProject = async () => {
+    let download = remoteProjects.value.find((item: any) => item._id == valueSelectProject.value)
+    if (download) {
+        if (await Project.where({ key: download.key }).get()) {
+            showNewProject.value = false
+            return
+        }
+        console.log(download)
+        let p = new Project()
+        p._id = download._id
+        p.user = download.user._id
+        p.key = download.key
+        p.name = download.name
+        p.create_at = download.create_at
+        p.save()
+        await handleLoadProjects()
+        showNewProject.value = false
+    }
+}
 </script>
 
 <template>
@@ -339,12 +378,26 @@ const handleLogin = async () => {
                     <n-modal v-model:show="showNewProject" preset="card" style="width: 600px;" :title="t('project.new')"
                         size="small">
                         <n-space vertical>
-                            <n-input v-model:value="newProjectName" type="text" :placeholder="t('project.name')"
-                                :disabled="loadingNewProject" />
-                            <n-button secondary size="small" @click.stop="handleNewProject"
-                                :loading="loadingNewProject">
-                                {{ t('common.confirm') }}
-                            </n-button>
+                            <n-input-group>
+                                <n-input v-model:value="newProjectName" type="text" :placeholder="t('project.name')"
+                                    :disabled="loadingNewProject" />
+                                <n-button secondary @click.stop="handleNewProject" :loading="loadingNewProject">
+                                    {{ t('common.confirm') }}
+                                </n-button>
+                            </n-input-group>
+                        </n-space>
+                        <n-divider />
+                        <n-space>
+                            <n-input-group>
+                                <n-select v-model:value="valueSelectProject" filterable :options="optionsRemoteProject"
+                                    placeholder="加载远程项目" />
+                                <n-button secondary @click.stop="handleLoadProject">
+                                    {{ t('common.load') }}
+                                </n-button>
+                                <n-button secondary @click.stop="handleDownloadProject">
+                                    {{ t('common.confirm') }}
+                                </n-button>
+                            </n-input-group>
                         </n-space>
                     </n-modal>
 

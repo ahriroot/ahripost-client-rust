@@ -6,6 +6,8 @@ const zh = {
         confirm: '确认',
         delete: '删除',
         open: '打开',
+        load: '加载',
+        sync: '同步',
     },
     project: {
         new: '新建项目',
