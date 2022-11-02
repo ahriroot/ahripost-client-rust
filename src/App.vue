@@ -27,7 +27,9 @@ const store = useIndexStore()
 const { t, locale } = useI18n()
 const showSide = ref<boolean>(true)  // 显示侧边栏
 const token = ref<string>('')  // token
-const tokenLoading = ref<boolean>(false)  // token
+const host = ref<string>('')  // host
+const tokenLoading = ref<boolean>(false)
+const hostLoading = ref<boolean>(false)
 const tabComs = shallowRef<{ [x: string]: any }>({
     api: ApiVue
 })
@@ -42,6 +44,14 @@ const handleSetToken = async () => {
         token: token.value
     })
     tokenLoading.value = false
+}
+const handleSetHost = async () => {
+    hostLoading.value = true
+    await store.updateConfig({
+        ...store.config,
+        host: host.value
+    })
+    hostLoading.value = false
 }
 
 const handleShowSide = async () => {
@@ -159,12 +169,15 @@ onBeforeMount(async () => {
                 pageSize: 20,
                 lang: 'zh-CN',
                 token: '',
+                host: 'https://ahripost.ahriknow.com',
                 client: window.crypto.randomUUID()
             }, false)
         }
         locale.value = store.config.lang
 
         token.value = store.config.token
+
+        host.value = store.config.host
 
         width.value = store.config.sideBarWidth
         oldWidth.value = width.value
@@ -254,7 +267,6 @@ const handleTabChanged = async (val: string) => {
     localStorage.setItem('current_tab', tab.value)
 }
 const handleCloseTab = async (event: Event | null, id: string) => {
-    console.log(id)
     if (event) {
         event.stopPropagation()
     }
@@ -276,9 +288,7 @@ const handleCloseTab = async (event: Event | null, id: string) => {
     localStorage.setItem('current_tab', tab.value)
 }
 const handleLogin = async () => {
-    console.log(1)
     let res = await start_login_server()
-    console.log(2)
     if (res) {
         await open('http://127.0.0.1:3000')
     }
@@ -288,16 +298,24 @@ const valueSelectProject = ref<number | undefined>()
 const optionsRemoteProject = ref<{ label: string; value: number }[]>([])
 const remoteProjects = ref<Project[]>([])
 const handleLoadProject = async () => {
+    let host = store.config.host
+    if (!host) {
+        host = 'https://ahripost.ahriknow.com'
+        store.updateConfig({
+            ...store.config,
+            host
+        })
+    }
     let res: any = await load_project({
-        server: 'http://127.0.0.1:8080',
+        server: host,
         token: store.config.token || ''
     })
     remoteProjects.value = res.data.projects
-    remoteProjects.value.forEach((item: any) => {
-        optionsRemoteProject.value.push({
-            value: item._id,
-            label: item.name
-        })
+    optionsRemoteProject.value = res.data.projects.map((p: Project) => {
+        return {
+            label: p.name,
+            value: p._id
+        }
     })
     if (optionsRemoteProject.value.length > 0) {
         valueSelectProject.value = optionsRemoteProject.value[0].value
@@ -306,8 +324,10 @@ const handleLoadProject = async () => {
 const handleDownloadProject = async () => {
     let download = remoteProjects.value.find((item: any) => item._id == valueSelectProject.value)
     if (download) {
-        if (await Project.where({ key: download.key }).get()) {
+        let has: any = await Project.where({ key: download.key }).get()
+        if (has && has.key) {
             showNewProject.value = false
+            window.$message.error('项目已存在')
             return
         }
         console.log(download)
@@ -362,6 +382,14 @@ const handleDownloadProject = async () => {
                         <n-button :loading="updateLoading" size="small" @click="handleUpdate">
                             {{ t('copywriting.checkUpdate') }}
                         </n-button>
+                        <br>
+                        <br>
+                        <n-input-group>
+                            <n-input v-model:value="host" placeholder="Host" />
+                            <n-button tertiary @click="handleSetHost" :loading="hostLoading">
+                                SET
+                            </n-button>
+                        </n-input-group>
                         <br>
                         <br>
                         <n-input-group>
@@ -435,7 +463,7 @@ const handleDownloadProject = async () => {
                                 </div>
                                 <div class="conn">
                                     <n-layout position="absolute" style="background: #21252b; color: #fff"
-                                        :native-scrollbar="false" content-style="padding: 10px;">
+                                        :native-scrollbar="false" content-style="padding: 10px; position: absolute">
                                         <component v-for="project in projects" :is="ProjectVue" :project="project"
                                             @handleOpenTab="handleOpenTab" @handleCloseTab="handleCloseTab"
                                             @handleDeleteProject="handleDeleteProject" />

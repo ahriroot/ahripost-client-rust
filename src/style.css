@@ -80,8 +80,8 @@
     border: #333842 solid 1px !important;
 }
 
-.n-spin-container,
-.n-spin-container .n-spin-content {
+.bottom .n-spin-container,
+.bottom .n-spin-container .n-spin-content {
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;

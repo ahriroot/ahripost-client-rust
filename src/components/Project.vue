@@ -62,11 +62,11 @@ const data2tree = async (data: any[], parent: string) => {
 
 const handleLoadProject = async () => {
     loading.value = true
-    let items = (await Item.where({ 'project': props.project.id }).order({ id: 1 }).all()) as any[]
+    let items = (await Item.where({ 'project': props.project.key }).order({ id: 1 }).all()) as any[]
     let res = await data2tree(items, '')
 
     data.value = [{
-        key: `project:${props.project.id}`,
+        key: `project:${props.project.key}`,
         label: props.project.name,
         value: '',
         type: 'project',
@@ -78,7 +78,7 @@ const handleLoadProject = async () => {
 
 onBeforeMount(async () => {
     await handleLoadProject()
-    let eks = localStorage.getItem(`expandedKeys:${props.project.id}`)
+    let eks = localStorage.getItem(`expandedKeys:${props.project.key}`)
     if (eks) {
         expandedKeys.value = JSON.parse(eks)
     }
@@ -153,7 +153,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 item.key = key
                                 item.label = label
                                 item.type = 'api'
-                                item.project = props.project.id
+                                item.project = props.project.key
                                 item.parent = option.type == 'project' ? '' : option.value
                                 item.last_update = new Date().getTime()
                                 item.tag = false
@@ -202,7 +202,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 item.key = key
                                 item.label = label
                                 item.type = 'folder'
-                                item.project = props.project.id
+                                item.project = props.project.key
                                 item.parent = option.type == 'project' ? '' : option.value
                                 item.last_update = new Date().getTime()
                                 item.tag = false
@@ -256,7 +256,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                             onClick: async () => {
                                 if (store.config?.deleteNoConfirm) {
                                     if (option.type == 'project') {
-                                        emits('handleDeleteProject', props.project.id)
+                                        emits('handleDeleteProject', props.project.key)
                                     } else {
                                         let obj: any = await Item.where({ key: option.value }).obj()
                                         if (obj.last_sync) {
@@ -276,7 +276,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                         positiveText: t('common.delete'),
                                         onPositiveClick: async () => {
                                             if (option.type == 'project') {
-                                                emits('handleDeleteProject', props.project.id)
+                                                emits('handleDeleteProject', props.project.key)
                                             } else {
                                                 let obj: any = await Item.where({ key: option.value }).obj()
                                                 if (obj.last_sync) {
@@ -309,8 +309,16 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 loading.value = true
                                 showContextmenu.value = false
                                 try {
+                                    let host = store.config.host
+                                    if (!host) {
+                                        host = 'https://ahripost.ahriknow.com'
+                                        store.updateConfig({
+                                            ...store.config,
+                                            host
+                                        })
+                                    }
                                     let formApis: { key: any; project: any; last_update: any; last_sync: any }[] = []
-                                    let items: any[] = (await Item.where({ project: props.project.id }).all()) as any[]
+                                    let items: any[] = (await Item.where({ project: props.project.key }).all()) as any[]
                                     items.forEach(async (item: any) => {
                                         formApis.push({
                                             key: item.key,
@@ -319,14 +327,14 @@ const nodeProps = ({ option }: { option: any }): any => {
                                             last_sync: item.last_sync,
                                         })
                                     })
-                                    let tmpProject: any = await Project.where({ id: props.project.id }).get()
+                                    let tmpProject: any = await Project.where({ key: props.project.key }).get()
                                     let formProject = {
                                         key: tmpProject.key,
                                         name: tmpProject.name,
                                     }
                                     let sc: any = await sync_check({
                                         data: { apis: formApis, project: formProject },
-                                        server: 'http://127.0.0.1:8080',
+                                        server: host,
                                         token: store.config.token || ''
                                     })
                                     if (sc.error && typeof sc.error == 'string') {
@@ -347,7 +355,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                             items_download: sc.data.items_download,
                                             project: formProject
                                         },
-                                        server: 'http://127.0.0.1:8080',
+                                        server: host,
                                         token: store.config.token || ''
                                     })
                                     if (sd.error && typeof sd.error == 'string') {
@@ -466,7 +474,7 @@ const nodeProps = ({ option }: { option: any }): any => {
 
 const handleExpand = (key: string[]) => {
     expandedKeys.value = key
-    localStorage.setItem(`expandedKeys:${props.project.id}`, JSON.stringify(key))
+    localStorage.setItem(`expandedKeys:${props.project.key}`, JSON.stringify(key))
 }
 
 const findSiblingsAndIndex = (
@@ -516,15 +524,13 @@ const handleDrop = async ({ node, dragNode, dropPosition }: TreeDropInfo) => {
 </script>
 
 <template>
-    <div>
-        <n-spin :show="loading">
-            <n-dropdown trigger="manual" size="small" placement="bottom-start" :show="showContextmenu"
-                :options="(optionsContextmenu as any)" :x="xPos" :y="yPos" @clickoutside="showContextmenu = false" />
-            <n-tree :data="data" :selectable="false" @update:expanded-keys="handleExpand" :node-props="nodeProps"
-                expand-on-click :render-switcher-icon="renderSwitcherIcon" :default-expanded-keys="expandedKeys"
-                :render-label="renderLabel" draggable @drop="handleDrop" />
-        </n-spin>
-    </div>
+    <n-spin :show="loading">
+        <n-dropdown trigger="manual" size="small" placement="bottom-start" :show="showContextmenu"
+            :options="(optionsContextmenu as any)" :x="xPos" :y="yPos" @clickoutside="showContextmenu = false" />
+        <n-tree :data="data" :selectable="false" @update:expanded-keys="handleExpand" :node-props="nodeProps"
+            expand-on-click :render-switcher-icon="renderSwitcherIcon" :default-expanded-keys="expandedKeys"
+            :render-label="renderLabel" draggable @drop="handleDrop" />
+    </n-spin>
 </template>
 
 <style scoped>

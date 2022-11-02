@@ -26,6 +26,7 @@ export const useIndexStore = defineStore<
                 pageSize: 20,
                 lang: 'zh-CN',
                 token: '',
+                host: '',
                 client: '',
             }
         }

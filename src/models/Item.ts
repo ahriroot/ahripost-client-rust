@@ -19,7 +19,7 @@ class Item extends BaseModel {
     label = StringField({ nullable: false, default: 'New Api' })
     type = StringField({ nullable: false, index: 'type_index' })
     from = StringField({ nullable: false, default: 'client' })
-    project = InteagerField({ nullable: false, default: 0 })
+    project = StringField({ nullable: false })
     parent = StringField({ nullable: true, default: '' })
     user = InteagerField({ nullable: false, default: 0 })
     tag = BooleanField({ nullable: false, default: false })
@@ -39,8 +39,16 @@ class Item extends BaseModel {
             tab: 'param',
             params_keys: [],
             params: [],
-            headers_keys: [],
-            headers: [],
+            headers_keys: ['Content-Type'],
+            headers: [{
+                key: 'Content-Type',
+                checked: true,
+                field: 'Content-Type',
+                value: 'application/json',
+                describe: 'Content-Type',
+                default: '',
+                must: true
+            }],
             body: {
                 type: 'json',
                 form_keys: [],

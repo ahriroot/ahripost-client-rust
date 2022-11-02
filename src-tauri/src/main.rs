@@ -27,7 +27,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         interface::sync_data,
         interface::sync_api,
         interface::load_project,
-        interface::download_project,
     ]);
     app.run(tauri::generate_context!())
         .expect("error while running ahridbms application");

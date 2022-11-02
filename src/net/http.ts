@@ -2,7 +2,6 @@ import { invoke } from "@tauri-apps/api/tauri"
 import { Request, Response } from "@/types/net/http"
 
 const request = async (request: Request) => {
-    console.log('get', request)
     let res = await invoke<Response>('request', { request })
     return res
 }

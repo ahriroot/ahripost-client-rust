@@ -1,32 +1,37 @@
+use std::error::Error;
+
 use crate::entity;
 use reqwest;
 use serde_json::{json, Value};
 
-#[tauri::command]
-pub async fn sync_api(data: Value, server: String, token: String) -> Value {
-    let href = format!("{}/client/api/sync", server);
+pub async fn exec(data: Value, path: String, token: String) -> Result<Value, Box<dyn Error>> {
     let mut headers = reqwest::header::HeaderMap::new();
     headers.insert(
-        reqwest::header::HeaderName::from_bytes("Content-Type".as_bytes()).unwrap(),
-        reqwest::header::HeaderValue::from_bytes("application/json".as_bytes()).unwrap(),
+        reqwest::header::HeaderName::from_bytes("Content-Type".as_bytes())?,
+        reqwest::header::HeaderValue::from_bytes("application/json".as_bytes())?,
     );
     headers.insert(
-        reqwest::header::HeaderName::from_bytes("Authorization".as_bytes()).unwrap(),
-        reqwest::header::HeaderValue::from_bytes(token.as_bytes()).unwrap(),
+        reqwest::header::HeaderName::from_bytes("Authorization".as_bytes())?,
+        reqwest::header::HeaderValue::from_bytes(token.as_bytes())?,
     );
-    // let json_data: Value = serde_json::from_str("{}").unwrap();
-    let response_result = reqwest::Client::new()
-        .request(reqwest::Method::POST, href.as_str())
+    let response = reqwest::Client::new()
+        .request(reqwest::Method::POST, path.as_str())
         .headers(headers)
         .json(&data)
         .send()
-        .await;
-    match response_result {
-        Ok(response) => {
-            let text = response.text().await.unwrap();
-            let res: Value = text.parse().unwrap();
-            res
-        }
+        .await?;
+
+    let text = response.text().await?;
+    let res: Value = text.parse()?;
+
+    Ok(res)
+}
+
+#[tauri::command]
+pub async fn sync_api(data: Value, server: String, token: String) -> Value {
+    let href = format!("{}/client/api/sync_api", server);
+    match exec(data, href, token).await {
+        Ok(res) => res,
         Err(err) => json!({ "error": err.to_string() }),
     }
 }
@@ -34,28 +39,8 @@ pub async fn sync_api(data: Value, server: String, token: String) -> Value {
 #[tauri::command]
 pub async fn sync_check(data: Value, server: String, token: String) -> Value {
     let href = format!("{}/client/api/sync_check", server);
-    let mut headers = reqwest::header::HeaderMap::new();
-    headers.insert(
-        reqwest::header::HeaderName::from_bytes("Content-Type".as_bytes()).unwrap(),
-        reqwest::header::HeaderValue::from_bytes("application/json".as_bytes()).unwrap(),
-    );
-    headers.insert(
-        reqwest::header::HeaderName::from_bytes("Authorization".as_bytes()).unwrap(),
-        reqwest::header::HeaderValue::from_bytes(token.as_bytes()).unwrap(),
-    );
-    // let json_data: Value = serde_json::from_str("{}").unwrap();
-    let response_result = reqwest::Client::new()
-        .request(reqwest::Method::POST, href.as_str())
-        .headers(headers)
-        .json(&data)
-        .send()
-        .await;
-    match response_result {
-        Ok(response) => {
-            let text = response.text().await.unwrap();
-            let res: Value = text.parse().unwrap();
-            res
-        }
+    match exec(data, href, token).await {
+        Ok(res) => res,
         Err(err) => json!({ "error": err.to_string() }),
     }
 }
@@ -63,28 +48,8 @@ pub async fn sync_check(data: Value, server: String, token: String) -> Value {
 #[tauri::command]
 pub async fn sync_data(data: Value, server: String, token: String) -> Value {
     let href = format!("{}/client/api/sync_data", server);
-    let mut headers = reqwest::header::HeaderMap::new();
-    headers.insert(
-        reqwest::header::HeaderName::from_bytes("Content-Type".as_bytes()).unwrap(),
-        reqwest::header::HeaderValue::from_bytes("application/json".as_bytes()).unwrap(),
-    );
-    headers.insert(
-        reqwest::header::HeaderName::from_bytes("Authorization".as_bytes()).unwrap(),
-        reqwest::header::HeaderValue::from_bytes(token.as_bytes()).unwrap(),
-    );
-    // let json_data: Value = serde_json::from_str("{}").unwrap();
-    let response_result = reqwest::Client::new()
-        .request(reqwest::Method::POST, href.as_str())
-        .headers(headers)
-        .json(&data)
-        .send()
-        .await;
-    match response_result {
-        Ok(response) => {
-            let text = response.text().await.unwrap();
-            let res: Value = text.parse().unwrap();
-            res
-        }
+    match exec(data, href, token).await {
+        Ok(res) => res,
         Err(err) => json!({ "error": err.to_string() }),
     }
 }
@@ -104,34 +69,6 @@ pub async fn load_project(server: String, token: String) -> Value {
     // let json_data: Value = serde_json::from_str("{}").unwrap();
     let response_result = reqwest::Client::new()
         .request(reqwest::Method::GET, href.as_str())
-        .headers(headers)
-        .send()
-        .await;
-    match response_result {
-        Ok(response) => {
-            let text = response.text().await.unwrap();
-            let res: Value = text.parse().unwrap();
-            res
-        }
-        Err(err) => json!({ "error": err.to_string() }),
-    }
-}
-
-#[tauri::command]
-pub async fn download_project(server: String, token: String) -> Value {
-    let href = format!("{}/client/api/sync", server);
-    let mut headers = reqwest::header::HeaderMap::new();
-    headers.insert(
-        reqwest::header::HeaderName::from_bytes("Content-Type".as_bytes()).unwrap(),
-        reqwest::header::HeaderValue::from_bytes("application/json".as_bytes()).unwrap(),
-    );
-    headers.insert(
-        reqwest::header::HeaderName::from_bytes("Authorization".as_bytes()).unwrap(),
-        reqwest::header::HeaderValue::from_bytes(token.as_bytes()).unwrap(),
-    );
-    // let json_data: Value = serde_json::from_str("{}").unwrap();
-    let response_result = reqwest::Client::new()
-        .request(reqwest::Method::POST, href.as_str())
         .headers(headers)
         .send()
         .await;

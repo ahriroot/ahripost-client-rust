@@ -13,5 +13,6 @@ export interface Config {
     pageSize: number
     lang: string
     token: string
+    host: string
     client: string
 }

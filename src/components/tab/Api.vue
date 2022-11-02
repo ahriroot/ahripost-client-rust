@@ -5,7 +5,7 @@ import {
     NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns,
     NRadioGroup, NSpace, NRadio, NUpload, NPopover
 } from 'naive-ui'
-import { FolderOutline, Add, Remove } from '@vicons/ionicons5'
+import { Add, Remove, Send, ReloadCircle } from '@vicons/ionicons5'
 import AInput from '@/components/AInput.vue'
 import ACheckbox from '@/components/ACheckbox.vue'
 import Item from '@/models/Item'
@@ -767,57 +767,73 @@ onMounted(async () => {
     })
 })
 
+const loading = ref(false)
 const handleSync = async () => {
-    let obj: any = await Item.where({ key: props.item }).obj()
-    obj.last_sync = new Date().getTime()
-    obj.request = JSON.parse(JSON.stringify(data.value.request))
-    obj.response = JSON.parse(JSON.stringify(data.value.response))
-    obj.tag = false
-    obj.client = store.config.client
-    obj.save()
+    loading.value = true
+    try {
+        let obj: any = await Item.where({ key: props.item }).obj()
+        obj.last_sync = new Date().getTime()
+        obj.request = JSON.parse(JSON.stringify(data.value.request))
+        obj.response = JSON.parse(JSON.stringify(data.value.response))
+        obj.tag = false
+        obj.client = store.config.client
+        obj.save()
 
-    let ids: string[] = []
-    let item: any = await Item.where({ key: props.item }).get()
-    ids.unshift(item.key)
-
-    while (item.parent) {
-        item = await Item.where({ key: item.parent }).get()
+        let ids: string[] = []
+        let item: any = await Item.where({ key: props.item }).get()
         ids.unshift(item.key)
-    }
-    let apis: any[] = []
-    for (let i = 0; i < ids.length; i++) {
-        let api: any = await Item.where({ key: ids[i] }).get()
-        api.request = JSON.stringify(api.request)
-        api.response = JSON.stringify(api.response)
-        apis.push(api)
-    }
-    if (apis.length > 0) {
-        let project: any = await Project.where({ id: apis[0].project }).get()
-        let res: any = await sync_api({
-            data: { apis: apis, project: project },
-            server: 'http://127.0.0.1:8080',
-            token: store.config.token || ''
-        })
-        if (res.data.items_update && res.data.items_update.length > 0) {
-            for (let i = 0; i < res.data.items_update.length; i++) {
-                let item: any = await Item.where({ key: res.data.items_update[i].key }).obj()
-                item.last_sync = res.data.items_update[i].last_sync
-                item.save()
-            }
+
+        while (item.parent) {
+            item = await Item.where({ key: item.parent }).get()
+            ids.unshift(item.key)
         }
-        if (res.data.items_sync && res.data.items_sync.length > 0) {
-            for (let i = 0; i < res.data.items_sync.length; i++) {
-                let item: any = await Item.where({ key: res.data.items_sync[i].key }).obj()
-                item.label = res.data.items_sync[i].label
-                item.last_sync = res.data.items_sync[i].last_sync
-                item.request = JSON.parse(res.data.items_sync[i].request)
-                item.response = JSON.parse(res.data.items_sync[i].response)
-                item.save()
-            }
+        let apis: any[] = []
+        for (let i = 0; i < ids.length; i++) {
+            let api: any = await Item.where({ key: ids[i] }).get()
+            api.request = JSON.stringify(api.request)
+            api.response = JSON.stringify(api.response)
+            apis.push(api)
         }
-    } else {
-        window.$message.warning('no api need to sync')
-    }
+        if (apis.length > 0) {
+            let host = store.config.host
+            if (!host) {
+                host = 'https://ahripost.ahriknow.com'
+                store.updateConfig({
+                    ...store.config,
+                    host
+                })
+            }
+            let project: any = await Project.where({ id: apis[0].project }).get()
+            let res: any = await sync_api({
+                data: { apis: apis, project: project },
+                server: host,
+                token: store.config.token || ''
+            })
+            if (res.error && typeof res.error == 'string') {
+                window.$message.error(res.error)
+            }
+            if (res.data.items_update && res.data.items_update.length > 0) {
+                for (let i = 0; i < res.data.items_update.length; i++) {
+                    let item: any = await Item.where({ key: res.data.items_update[i].key }).obj()
+                    item.last_sync = res.data.items_update[i].last_sync
+                    item.save()
+                }
+            }
+            if (res.data.items_sync && res.data.items_sync.length > 0) {
+                for (let i = 0; i < res.data.items_sync.length; i++) {
+                    let item: any = await Item.where({ key: res.data.items_sync[i].key }).obj()
+                    item.label = res.data.items_sync[i].label
+                    item.last_sync = res.data.items_sync[i].last_sync
+                    item.request = JSON.parse(res.data.items_sync[i].request)
+                    item.response = JSON.parse(res.data.items_sync[i].response)
+                    item.save()
+                }
+            }
+        } else {
+            window.$message.warning('no api need to sync')
+        }
+    } catch { }
+    loading.value = false
 }
 </script>
 
@@ -829,7 +845,13 @@ const handleSync = async () => {
                     <n-input v-model:value="data.label" placeholder="Label" />
                     <n-input v-model:value="data.request.describe" placeholder="Describe" />
                     <span>
-                        <n-button secondary @click="handleSync">SYNC</n-button>
+                        <n-button secondary @click="handleSync" :loading="loading">
+                            <template #icon>
+                                <n-icon>
+                                    <ReloadCircle />
+                                </n-icon>
+                            </template>
+                        </n-button>
                     </span>
                 </n-input-group>
             </div>
@@ -837,7 +859,13 @@ const handleSync = async () => {
                 <n-input-group>
                     <n-select v-model:value="data.request.method" :options="options" style="width: 150px" />
                     <n-input v-model:value="href" placeholder="Location" />
-                    <n-button secondary @click="handleSend">SEND</n-button>
+                    <n-button secondary @click="handleSend" :loading="showLoading">
+                        <template #icon>
+                            <n-icon>
+                                <Send />
+                            </n-icon>
+                        </template>
+                    </n-button>
                 </n-input-group>
             </div>
             <n-tabs style="top: 72px; bottom: 0" v-model:value="data.request.tab">
