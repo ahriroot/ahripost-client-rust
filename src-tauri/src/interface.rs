@@ -3,7 +3,7 @@ use reqwest;
 use serde_json::{json, Value};
 
 #[tauri::command]
-pub async fn sync_api(api: Value, server: String, token: String) -> Value {
+pub async fn sync_api(data: Value, server: String, token: String) -> Value {
     let href = format!("{}/client/api/sync", server);
     let mut headers = reqwest::header::HeaderMap::new();
     headers.insert(
@@ -18,7 +18,7 @@ pub async fn sync_api(api: Value, server: String, token: String) -> Value {
     let response_result = reqwest::Client::new()
         .request(reqwest::Method::POST, href.as_str())
         .headers(headers)
-        .json(&api)
+        .json(&data)
         .send()
         .await;
     match response_result {

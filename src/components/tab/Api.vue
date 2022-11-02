@@ -655,8 +655,6 @@ const handleSend = async () => {
     let response = await request(args)
     showLoading.value = false
 
-    console.log(response)
-
     data.value.response.status = response.status
     data.value.response.statusText = response.canonical_reason
     data.value.response.headers = response.headers
@@ -682,11 +680,13 @@ const handleSend = async () => {
     if (responseRef.value && data.value.response?.body) {
         responseRef.value.setValue(response.body || '')
     }
-    
+
     let obj: any = await Item.where({ key: props.item }).obj()
     obj.last_update = new Date().getTime()
     obj.request = JSON.parse(JSON.stringify(data.value.request))
     obj.response = JSON.parse(JSON.stringify(data.value.response))
+    obj.tag = false
+    obj.client = store.config.client
     obj.save()
 }
 const handleChangeType = (_: string) => {
@@ -760,58 +760,64 @@ onMounted(async () => {
             obj.last_update = new Date().getTime()
             obj.request = JSON.parse(JSON.stringify(data.value.request))
             obj.response = JSON.parse(JSON.stringify(data.value.response))
+            obj.tag = false
+            obj.client = store.config.client
             obj.save()
         }
     })
 })
 
-const handleSyncItem = async (key: string) => {
-    let api: any = await Item.where({ key: key }).get()
-    api.request = JSON.stringify(api.request)
-    api.response = JSON.stringify(api.response)
-    let project: any = await Project.where({ id: api.project }).get()
-    let current_time = new Date().getTime()
-    if (api.last_sync < current_time) {
-        let res: any = await sync_api({
-            api: { item: api, project: project },
-            server: 'http://127.0.0.1:8080',
-            token: store.config.token || ''
-        })
-        console.log(res)
-        if (res.data.project._id != project._id) {
-            let project_obj: any = await Project.where({ id: api.project }).obj()
-            project_obj._id = res.data.project._id
-            project_obj.last_sync = current_time
-            project_obj.save()
-        }
-        if (res.data.item._id != api._id) {
-            let item_obj: any = await Item.where({ key: props.item }).obj()
-            item_obj._id = res.data.item._id
-            item_obj.last_sync = current_time
-            item_obj.save()
-        }
-    }
-}
-
 const handleSync = async () => {
-
     let obj: any = await Item.where({ key: props.item }).obj()
     obj.last_sync = new Date().getTime()
     obj.request = JSON.parse(JSON.stringify(data.value.request))
     obj.response = JSON.parse(JSON.stringify(data.value.response))
+    obj.tag = false
+    obj.client = store.config.client
     obj.save()
 
     let ids: string[] = []
     let item: any = await Item.where({ key: props.item }).get()
     ids.unshift(item.key)
 
-    while (item.parent != 0) {
+    while (item.parent) {
         item = await Item.where({ key: item.parent }).get()
-        ids.unshift(item.id)
+        ids.unshift(item.key)
     }
-    ids.forEach(async (key) => {
-        await handleSyncItem(key)
-    })
+    let apis: any[] = []
+    for (let i = 0; i < ids.length; i++) {
+        let api: any = await Item.where({ key: ids[i] }).get()
+        api.request = JSON.stringify(api.request)
+        api.response = JSON.stringify(api.response)
+        apis.push(api)
+    }
+    if (apis.length > 0) {
+        let project: any = await Project.where({ id: apis[0].project }).get()
+        let res: any = await sync_api({
+            data: { apis: apis, project: project },
+            server: 'http://127.0.0.1:8080',
+            token: store.config.token || ''
+        })
+        if (res.data.items_update && res.data.items_update.length > 0) {
+            for (let i = 0; i < res.data.items_update.length; i++) {
+                let item: any = await Item.where({ key: res.data.items_update[i].key }).obj()
+                item.last_sync = res.data.items_update[i].last_sync
+                item.save()
+            }
+        }
+        if (res.data.items_sync && res.data.items_sync.length > 0) {
+            for (let i = 0; i < res.data.items_sync.length; i++) {
+                let item: any = await Item.where({ key: res.data.items_sync[i].key }).obj()
+                item.label = res.data.items_sync[i].label
+                item.last_sync = res.data.items_sync[i].last_sync
+                item.request = JSON.parse(res.data.items_sync[i].request)
+                item.response = JSON.parse(res.data.items_sync[i].response)
+                item.save()
+            }
+        }
+    } else {
+        window.$message.warning('no api need to sync')
+    }
 }
 </script>
 

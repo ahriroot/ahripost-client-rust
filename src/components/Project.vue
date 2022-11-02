@@ -156,7 +156,9 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 item.project = props.project.id
                                 item.parent = option.type == 'project' ? '' : option.value
                                 item.last_update = new Date().getTime()
-                                let id = await item.save()
+                                item.tag = false
+                                item.client = store.config.client
+                                await item.save()
 
                                 if (!expandedKeys.value.includes(option.key as string)) {
                                     expandedKeys.value.push(option.key)
@@ -203,8 +205,10 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 item.project = props.project.id
                                 item.parent = option.type == 'project' ? '' : option.value
                                 item.last_update = new Date().getTime()
-                                item.request = null
-                                item.response = null
+                                item.tag = false
+                                item.client = store.config.client
+                                item.request = ''
+                                item.response = ''
                                 await item.save()
 
                                 if (expandedKeys.value.indexOf(option.key as string) == -1) {
@@ -298,74 +302,92 @@ const nodeProps = ({ option }: { option: any }): any => {
                         key: 'syncs',
                         props: {
                             onClick: async () => {
-                                let formApis: { key: any; project: any; last_update: any; last_sync: any }[] = []
-                                let items: any[] = (await Item.where({ project: props.project.id }).all()) as any[]
-                                items.forEach(async (item: any) => {
-                                    formApis.push({
-                                        key: item.key,
-                                        project: item.project,
-                                        last_update: item.last_update,
-                                        last_sync: item.last_sync,
-                                    })
-                                })
-                                let tmpProject: any = await Project.where({ id: props.project.id }).get()
-                                let formProject = {
-                                    key: tmpProject.key,
-                                    name: tmpProject.name,
+                                if (!store.config?.token) {
+                                    window.$message.error("No Token")
+                                    return
                                 }
-                                let sc: any = await sync_check({
-                                    data: { apis: formApis, project: formProject },
-                                    server: 'http://127.0.0.1:8080',
-                                    token: store.config.token || ''
-                                })
-                                let items_upload: any[] = []
-                                for (let i = 0; i < sc.data.items_upload.length; i++) {
-                                    let api: any = await Item.where({ key: sc.data.items_upload[i] }).get()
-                                    if (api && api.key) {
-                                        api.request = JSON.stringify(api.request)
-                                        api.response = JSON.stringify(api.response)
-                                        items_upload.push(api)
-                                    }
-                                }
-                                let sd: any = await sync_data({
-                                    data: {
-                                        items_upload: items_upload,
-                                        items_download: sc.data.items_download,
-                                        project: formProject
-                                    },
-                                    server: 'http://127.0.0.1:8080',
-                                    token: store.config.token || ''
-                                })
-                                for (let i = 0; i < sd.data.length; i++) {
-                                    let api = (await Item.where({ key: sd.data[i].key }).obj() as Item)
-                                    if (api && api.key) {
-                                        api.request = sd.data[i].request ? JSON.parse(sd.data[i].request) : null
-                                        api.response = sd.data[i].response ? JSON.parse(sd.data[i].response) : null
-                                        api.label = sd.data[i].label
-                                        api.type = sd.data[i].type
-                                        api.from = sd.data[i].from
-                                        api.project = sd.data[i].project_id
-                                        api.parent = sd.data[i].parent
-                                        api.last_sync = sd.data[i].last_sync
-                                        api.last_update = sd.data[i].last_update
-                                        await api.save()
-                                    } else {
-                                        let api = new Item()
-                                        api.key = sd.data[i].key
-                                        api.request = sd.data[i].request ? JSON.parse(sd.data[i].request) : null
-                                        api.response = sd.data[i].response ? JSON.parse(sd.data[i].response) : null
-                                        api.label = sd.data[i].label
-                                        api.type = sd.data[i].type
-                                        api.from = sd.data[i].from
-                                        api.project = sd.data[i].project_id
-                                        api.parent = sd.data[i].parent
-                                        api.last_sync = sd.data[i].last_sync
-                                        api.last_update = sd.data[i].last_update
-                                        await api.save()
-                                    }
-                                }
+                                loading.value = true
                                 showContextmenu.value = false
-                                await handleLoadProject()
+                                try {
+                                    let formApis: { key: any; project: any; last_update: any; last_sync: any }[] = []
+                                    let items: any[] = (await Item.where({ project: props.project.id }).all()) as any[]
+                                    items.forEach(async (item: any) => {
+                                        formApis.push({
+                                            key: item.key,
+                                            project: item.project,
+                                            last_update: item.last_update,
+                                            last_sync: item.last_sync,
+                                        })
+                                    })
+                                    let tmpProject: any = await Project.where({ id: props.project.id }).get()
+                                    let formProject = {
+                                        key: tmpProject.key,
+                                        name: tmpProject.name,
+                                    }
+                                    let sc: any = await sync_check({
+                                        data: { apis: formApis, project: formProject },
+                                        server: 'http://127.0.0.1:8080',
+                                        token: store.config.token || ''
+                                    })
+                                    if (sc.error && typeof sc.error == 'string') {
+                                        window.$message.error(sc.error)
+                                    }
+                                    let items_upload: any[] = []
+                                    for (let i = 0; i < sc.data.items_upload.length; i++) {
+                                        let api: any = await Item.where({ key: sc.data.items_upload[i] }).get()
+                                        if (api && api.key) {
+                                            api.request = JSON.stringify(api.request)
+                                            api.response = JSON.stringify(api.response)
+                                            items_upload.push(api)
+                                        }
+                                    }
+                                    let sd: any = await sync_data({
+                                        data: {
+                                            items_upload: items_upload,
+                                            items_download: sc.data.items_download,
+                                            project: formProject
+                                        },
+                                        server: 'http://127.0.0.1:8080',
+                                        token: store.config.token || ''
+                                    })
+                                    if (sd.error && typeof sd.error == 'string') {
+                                        window.$message.error(sd.error)
+                                    }
+                                    for (let i = 0; i < sd.data.length; i++) {
+                                        let api = (await Item.where({ key: sd.data[i].key }).obj() as Item)
+                                        if (api && api.key) {
+                                            api.request = sd.data[i].request ? JSON.parse(sd.data[i].request) : null
+                                            api.response = sd.data[i].response ? JSON.parse(sd.data[i].response) : null
+                                            api.label = sd.data[i].label
+                                            api.type = sd.data[i].type
+                                            api.from = sd.data[i].from
+                                            api.project = sd.data[i].project_id
+                                            api.parent = sd.data[i].parent
+                                            api.last_sync = sd.data[i].last_sync
+                                            api.last_update = sd.data[i].last_update
+                                            api.tag = false
+                                            api.client = store.config.client
+                                            await api.save()
+                                        } else {
+                                            let api = new Item()
+                                            api.key = sd.data[i].key
+                                            api.request = sd.data[i].request ? JSON.parse(sd.data[i].request) : null
+                                            api.response = sd.data[i].response ? JSON.parse(sd.data[i].response) : null
+                                            api.label = sd.data[i].label
+                                            api.type = sd.data[i].type
+                                            api.from = sd.data[i].from
+                                            api.project = sd.data[i].project_id
+                                            api.parent = sd.data[i].parent
+                                            api.last_sync = sd.data[i].last_sync
+                                            api.last_update = sd.data[i].last_update
+                                            api.tag = false
+                                            api.client = store.config.client
+                                            await api.save()
+                                        }
+                                    }
+                                    await handleLoadProject()
+                                } catch { }
+                                loading.value = false
                             }
                         }
                     })

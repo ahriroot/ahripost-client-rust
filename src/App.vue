@@ -158,7 +158,8 @@ onBeforeMount(async () => {
                 apiAreaHeight: 300,
                 pageSize: 20,
                 lang: 'zh-CN',
-                token: ''
+                token: '',
+                client: window.crypto.randomUUID()
             }, false)
         }
         locale.value = store.config.lang

@@ -5,7 +5,8 @@ import {
     KeyPathField,
     StringField,
     InteagerField,
-    ObjectField
+    ObjectField,
+    BooleanField
 } from 'iorm'
 
 class Item extends BaseModel {
@@ -19,9 +20,10 @@ class Item extends BaseModel {
     type = StringField({ nullable: false, index: 'type_index' })
     from = StringField({ nullable: false, default: 'client' })
     project = InteagerField({ nullable: false, default: 0 })
-    // parent = InteagerField({ nullable: false, default: 0 })
     parent = StringField({ nullable: true, default: '' })
     user = InteagerField({ nullable: false, default: 0 })
+    tag = BooleanField({ nullable: false, default: false })
+    client = StringField({ nullable: false, default: '' })
     last_sync = InteagerField({ nullable: false, default: 0 })
     last_update = InteagerField({ nullable: false, default: 0 })
     request = ObjectField({
