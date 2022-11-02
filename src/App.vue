@@ -14,7 +14,6 @@ import ProjectVue from '@/components/Project.vue'
 import ApiVue from '@/components/tab/Api.vue'
 import Project from '@/models/Project'
 import Item from '@/models/Item'
-import { nanoid } from 'nanoid'
 import tauriConfig from '../src-tauri/tauri.conf.json'
 import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
 import { relaunch } from '@tauri-apps/api/process'
@@ -128,7 +127,7 @@ const handleNewProject = async () => {
         return
     }
     let project = new Project()
-    project.key = nanoid()
+    project.key = window.crypto.randomUUID()
     project.name = newProjectName.value
     project.create_at = Date.now()
     project.save()
@@ -254,6 +253,7 @@ const handleTabChanged = async (val: string) => {
     localStorage.setItem('current_tab', tab.value)
 }
 const handleCloseTab = async (event: Event | null, id: string) => {
+    console.log(id)
     if (event) {
         event.stopPropagation()
     }

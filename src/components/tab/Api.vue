@@ -6,7 +6,6 @@ import {
     NRadioGroup, NSpace, NRadio, NUpload, NPopover
 } from 'naive-ui'
 import { FolderOutline, Add, Remove } from '@vicons/ionicons5'
-import { nanoid } from 'nanoid'
 import AInput from '@/components/AInput.vue'
 import ACheckbox from '@/components/ACheckbox.vue'
 import Item from '@/models/Item'
@@ -20,7 +19,6 @@ import Project from '@/models/Project'
 
 window.$message = useMessage()
 const store = useIndexStore()
-const dialog = useDialog()
 const data = ref<any>({
     request: {
         body: {
@@ -49,7 +47,7 @@ const emits = defineEmits<{
 onBeforeMount(async () => {
     height.value = store.config.apiAreaHeight
 
-    let res = await Item.where({ id: props.item }).get()
+    let res = await Item.where({ key: props.item }).get()
     data.value = res
 
     data.value.request.body.form = data.value.request.body.form.map((item: any) => {
@@ -201,7 +199,7 @@ const columns = ref<DataTableColumns<any>>([
                         quaternary: true,
                         onClick: () => {
                             data.value.request.body.form.push({
-                                key: nanoid(),
+                                key: window.crypto.randomUUID(),
                                 checked: true,
                                 field: '',
                                 value: '',
@@ -234,7 +232,7 @@ const columns = ref<DataTableColumns<any>>([
                         onClick: () => {
                             if (data.value.request.tab === 'param') {
                                 data.value.request.params.push({
-                                    key: nanoid(),
+                                    key: window.crypto.randomUUID(),
                                     checked: true,
                                     field: '',
                                     value: '',
@@ -244,7 +242,7 @@ const columns = ref<DataTableColumns<any>>([
                                 })
                             } else if (data.value.request.tab === 'header') {
                                 data.value.request.headers.push({
-                                    key: nanoid(),
+                                    key: window.crypto.randomUUID(),
                                     checked: true,
                                     field: '',
                                     value: '',
@@ -254,7 +252,7 @@ const columns = ref<DataTableColumns<any>>([
                                 })
                             } else if (data.value.request.tab === 'body' && data.value.request.body.type === 'form') {
                                 data.value.request.body.form.push({
-                                    key: nanoid(),
+                                    key: window.crypto.randomUUID(),
                                     checked: true,
                                     field: '',
                                     value: '',
@@ -278,7 +276,50 @@ const columns = ref<DataTableColumns<any>>([
         }
     }
 ])
-
+const columnsResponseHeaders = ref<DataTableColumns<any>>([
+    {
+        title: 'Key',
+        key: 'field',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input'
+                },
+                [
+                    h(AInput, {
+                        value: row.field,
+                        placeholder: 'Key',
+                        clearable: false,
+                        onUpdateValue: (val: any) => {
+                            row.field = val
+                        }
+                    })
+                ]
+            )
+        }
+    },
+    {
+        title: 'Value',
+        key: 'value',
+        render(row: any, index: number) {
+            return h('div',
+                {
+                    class: 'input'
+                },
+                [
+                    h(AInput, {
+                        value: row.value,
+                        placeholder: 'Value',
+                        clearable: false,
+                        onUpdateValue: (val: any) => {
+                            row.field = val
+                        }
+                    })
+                ]
+            )
+        }
+    }
+])
 const columnsForm = ref<DataTableColumns<any>>([
     {
         type: 'selection',
@@ -485,7 +526,7 @@ const columnsForm = ref<DataTableColumns<any>>([
                         size: 'small',
                         quaternary: true,
                         onClick: () => {
-                            let key = nanoid()
+                            let key = window.crypto.randomUUID()
                             if (data.value.request.tab === 'param') {
                                 data.value.request.params.push({
                                     key: key,
@@ -619,12 +660,34 @@ const handleSend = async () => {
     data.value.response.status = response.status
     data.value.response.statusText = response.canonical_reason
     data.value.response.headers = response.headers
-    data.value.response.body.json = response.body
+    data.value.response.tab = 'body'
 
+    let contentType = response.headers.find((item: any) => item.field.toLowerCase() === 'content-type')
+    if (contentType) {
+        if (contentType.value.includes('application/json')) {
+            data.value.response.body.type = 'pretty'
+            data.value.response.body.json = response.body
+        } else if (contentType.value.includes('text/html')) {
+            data.value.response.body.type = 'preview'
+            data.value.response.body.html = response.body
+        } else {
+            data.value.response.body.type = 'raw'
+            data.value.response.body.text = response.body
+        }
+    } else {
+        data.value.response.body.type = 'raw'
+        data.value.response.body.text = response.body
+    }
 
     if (responseRef.value && data.value.response?.body) {
         responseRef.value.setValue(response.body || '')
     }
+    
+    let obj: any = await Item.where({ key: props.item }).obj()
+    obj.last_update = new Date().getTime()
+    obj.request = JSON.parse(JSON.stringify(data.value.request))
+    obj.response = JSON.parse(JSON.stringify(data.value.response))
+    obj.save()
 }
 const handleChangeType = (_: string) => {
     requestRef.value.setValue(data.value.request.body.json || '')
@@ -693,7 +756,7 @@ onMounted(async () => {
     tabApiRef.value?.addEventListener('keydown', async (ev) => {
         if (ev.ctrlKey && ev.key == 's') {
             ev.preventDefault()
-            let obj: any = await Item.where({ id: props.item }).obj()
+            let obj: any = await Item.where({ key: props.item }).obj()
             obj.last_update = new Date().getTime()
             obj.request = JSON.parse(JSON.stringify(data.value.request))
             obj.response = JSON.parse(JSON.stringify(data.value.response))
@@ -702,8 +765,8 @@ onMounted(async () => {
     })
 })
 
-const handleSyncItem = async (id: number) => {
-    let api: any = await Item.where({ id: id }).get()
+const handleSyncItem = async (key: string) => {
+    let api: any = await Item.where({ key: key }).get()
     api.request = JSON.stringify(api.request)
     api.response = JSON.stringify(api.response)
     let project: any = await Project.where({ id: api.project }).get()
@@ -722,7 +785,7 @@ const handleSyncItem = async (id: number) => {
             project_obj.save()
         }
         if (res.data.item._id != api._id) {
-            let item_obj: any = await Item.where({ id: props.item }).obj()
+            let item_obj: any = await Item.where({ key: props.item }).obj()
             item_obj._id = res.data.item._id
             item_obj.last_sync = current_time
             item_obj.save()
@@ -732,22 +795,22 @@ const handleSyncItem = async (id: number) => {
 
 const handleSync = async () => {
 
-    let obj: any = await Item.where({ id: props.item }).obj()
+    let obj: any = await Item.where({ key: props.item }).obj()
     obj.last_sync = new Date().getTime()
     obj.request = JSON.parse(JSON.stringify(data.value.request))
     obj.response = JSON.parse(JSON.stringify(data.value.response))
     obj.save()
 
-    let ids: number[] = []
-    let item: any = await Item.where({ id: props.item }).get()
-    ids.unshift(item.id)
+    let ids: string[] = []
+    let item: any = await Item.where({ key: props.item }).get()
+    ids.unshift(item.key)
 
     while (item.parent != 0) {
-        item = await Item.where({ id: item.parent }).get()
+        item = await Item.where({ key: item.parent }).get()
         ids.unshift(item.id)
     }
-    ids.forEach(async (id) => {
-        await handleSyncItem(id)
+    ids.forEach(async (key) => {
+        await handleSyncItem(key)
     })
 }
 </script>
@@ -771,7 +834,7 @@ const handleSync = async () => {
                     <n-button secondary @click="handleSend">SEND</n-button>
                 </n-input-group>
             </div>
-            <n-tabs style="top: 72px; bottom: 6px" v-model:value="data.request.tab">
+            <n-tabs style="top: 72px; bottom: 0" v-model:value="data.request.tab">
                 <n-tab-pane name="header" display-directive="show">
                     <template #tab>
                         <div style="padding: 0 10px">
@@ -838,14 +901,63 @@ const handleSync = async () => {
         <div ref="bottomRef" class="bottom" :style="`top: ${height}px`">
             <n-spin :show="showLoading">
                 <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b" :native-scrollbar="false">
-                    <Editor ref="responseRef" @change="(val) => data.response.body.json = val"
-                        :value="data.response.body.json" />
+                    <n-tabs style="top: 0; bottom: 0" v-model:value="data.response.tab">
+                        <n-tab-pane name="header" display-directive="show">
+                            <template #tab>
+                                <div style="padding: 0 10px">
+                                    <span>Header</span>
+                                </div>
+                            </template>
+                            <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b"
+                                :native-scrollbar="false">
+                                <n-data-table v-if="data.response?.headers" size="small"
+                                    :columns="columnsResponseHeaders" :data="data.response.headers" :single-line="false"
+                                    :bordered="false" />
+                            </n-layout>
+                        </n-tab-pane>
+                        <n-tab-pane name="body" display-directive="show">
+                            <template #tab>
+                                <div style="padding: 0 10px">
+                                    <span>Body</span>
+                                </div>
+                            </template>
+                            <n-radio-group v-model:value="data.response.body.type"
+                                style="position: absolute; top: 6px; left: 4px" name="radiogroup"
+                                @update:value="handleChangeType">
+                                <n-space>
+                                    <n-radio v-for="song in [
+                                        { label: 'Pretty', value: 'pretty' },
+                                        { label: 'Raw', value: 'raw' },
+                                        { label: 'Preview', value: 'preview' },
+                                    ]" :key="song.value" :value="song.value">
+                                        {{ song.label }}
+                                    </n-radio>
+                                </n-space>
+                            </n-radio-group>
+                            <div v-show="data.response.body.type == 'pretty'"
+                                style="position: absolute; top: 30px; left: 0; bottom: 0; right: 0">
+                                <Editor ref="responseRef" @change="(val) => data.response.body.json = val"
+                                    :value="data.response.body.json" />
+                            </div>
+                            <div v-show="data.response.body.type == 'raw'"
+                                style="position: absolute; top: 30px; left: 0; bottom: 0; right: 0">
+                                <pre>{{ data.response.body.text }}</pre>
+                            </div>
+                            <div v-show="data.response.body.type == 'preview'"
+                                style="position: absolute; top: 30px; left: 0; bottom: 0; right: 0">
+                                <pre>{{ data.response.body.html }}</pre>
+                            </div>
+                        </n-tab-pane>
+                        <template #suffix>
+                            {{ data.response.status }}&nbsp;{{ data.response.statusText }}&nbsp;&nbsp;
+                        </template>
+                    </n-tabs>
                 </n-layout>
             </n-spin>
         </div>
     </div>
 </template>
-<!-- https://127.0.0.1:123?k1=123322222234222 -->
+
 <style scoped>
 .tab-api {
     position: absolute;
@@ -861,6 +973,7 @@ const handleSync = async () => {
     left: 0;
     right: 0;
     background: #21252b;
+    border-bottom: 4px solid #333842;
 }
 
 .tab-api .bottom {

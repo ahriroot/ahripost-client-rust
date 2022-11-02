@@ -528,9 +528,9 @@ highlight.js@^11.5.0:
   resolved "https://registry.npmmirror.com/highlight.js/-/highlight.js-11.6.0.tgz#a50e9da05763f1bb0c1322c8f4f755242cff3f5a"
   integrity sha512-ig1eqDzJaB0pqEvlPVIpSSyMaO92bH1N2rJpLMN/nX396wTpDA4Eq0uK+7I/2XG17pFaaKE0kjV/XPeGt7Evjw==
 
-iorm@0.0.16:
+iorm@^0.0.16:
   version "0.0.16"
-  resolved "https://registry.npmmirror.com/iorm/-/iorm-0.0.16.tgz#c41a7a870fbb12bb97360962bb32ffc09af47053"
+  resolved "https://registry.yarnpkg.com/iorm/-/iorm-0.0.16.tgz#c41a7a870fbb12bb97360962bb32ffc09af47053"
   integrity sha512-Cq8h1/gDpdAFX+Zp4hyrrg4zI8ca5K6DwR+0zT8s09Wc/HovT3hQd30e3E8h4hG/PbxOxL5mVIlx+tL98vLF9g==
 
 is-core-module@^2.9.0:
@@ -601,11 +601,6 @@ nanoid@^3.3.4:
   version "3.3.4"
   resolved "https://registry.npmmirror.com/nanoid/-/nanoid-3.3.4.tgz#730b67e3cd09e2deacf03c027c81c9d9dbc5e8ab"
   integrity sha512-MqBkQh/OHTS2egovRtLk45wEyNXwF+cokD+1YPf9u5VfJiRdAiRwB2froX5Co9Rh20xs4siNPm8naNotSD6RBw==
-
-nanoid@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.npmmirror.com/nanoid/-/nanoid-4.0.0.tgz#6e144dee117609232c3f415c34b0e550e64999a5"
-  integrity sha512-IgBP8piMxe/gf73RTQx7hmnhwz0aaEXYakvqZyE302IXW3HyVNhdNGC+O2MwMAVhLEnvXlvKtGbtJf6wvHihCg==
 
 path-parse@^1.0.7:
   version "1.0.7"

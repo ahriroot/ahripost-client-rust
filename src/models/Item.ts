@@ -19,7 +19,8 @@ class Item extends BaseModel {
     type = StringField({ nullable: false, index: 'type_index' })
     from = StringField({ nullable: false, default: 'client' })
     project = InteagerField({ nullable: false, default: 0 })
-    parent = InteagerField({ nullable: false, default: 0 })
+    // parent = InteagerField({ nullable: false, default: 0 })
+    parent = StringField({ nullable: true, default: '' })
     user = InteagerField({ nullable: false, default: 0 })
     last_sync = InteagerField({ nullable: false, default: 0 })
     last_update = InteagerField({ nullable: false, default: 0 })
@@ -51,10 +52,12 @@ class Item extends BaseModel {
             status: '',
             statusText: '',
             headers: [],
+            tab: 'body',
             body: {
-                type: 'json',
-                html: [],
-                json: `{}`
+                type: 'pretty',
+                html: '',
+                json: `{}`,
+                text: ''
             }
         }
     })

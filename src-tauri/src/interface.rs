@@ -238,9 +238,12 @@ pub async fn request(request: entity::Request) -> Value {
     match response_result {
         Ok(response) => {
             // 遍历 headers
-            let mut headers = json!({});
+            let mut headers: Vec<Value> = Vec::new();
             for (key, value) in response.headers() {
-                headers[key.as_str()] = json!(value.to_str().unwrap());
+                headers.push(json!({
+                    "field": key.as_str(),
+                    "value": value.to_str().unwrap()
+                }));
             }
             let version = match response.version() {
                 reqwest::Version::HTTP_09 => "HTTP/0.9",

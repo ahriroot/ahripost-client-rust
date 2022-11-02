@@ -6,11 +6,15 @@ const props = withDefaults(defineProps<{
     value: string | null
     bg?: string
     placeholder?: string
+    readonly?: boolean
+    clearable?: boolean
     onUpdateValue: (val: string | null) => void
     onBlur?: () => void
 }>(), {
     bg: 'none',
     placeholder: '',
+    readonly: false,
+    clearable: true,
 })
 const emits = defineEmits<{
     (e: 'update:value', val: string | null): void
@@ -36,7 +40,7 @@ watch(() => props.value, (val) => {
     
 <template>
     <n-input ref="inputRef" size="small" :value="value" @update:value="handleChange" @clear="handleClear"
-        :placeholder="props.placeholder" clearable />
+        :placeholder="props.placeholder" :clearable="props.clearable" :readonly="props.readonly" />
 </template>
     
 <style scoped>

@@ -2,7 +2,6 @@
 import { h, ref, VNodeChild, onBeforeMount } from 'vue'
 import { NTree, NIcon, TreeOption, NDropdown, NSpin, useDialog } from 'naive-ui'
 import { FolderOutline, ChevronForward, CodeWorkingOutline } from '@vicons/ionicons5'
-import { nanoid } from 'nanoid'
 
 import { TreeDropInfo, TreeRenderProps } from 'naive-ui/es/tree/src/interface'
 import AInputFocus from './AInputFocus.vue'
@@ -34,7 +33,7 @@ const { t } = useI18n()
 
 const loading = ref(false)
 
-const data2tree = async (data: any[], parent: number) => {
+const data2tree = async (data: any[], parent: string) => {
     let tmp: any[] = []
     for (let index = 0; index < data.length; index++) {
         const element = data[index];
@@ -42,13 +41,13 @@ const data2tree = async (data: any[], parent: number) => {
             let tmp_item: any = {
                 key: element.key,
                 label: element.label,
-                value: element.id,
+                value: element.key,
                 type: element.type,
                 edit: false,
             }
             if (element.type == 'folder') {
                 tmp_item.prefix = () => h(NIcon, null, { default: () => h(FolderOutline) })
-                let res = await data2tree(data, element.id)
+                let res = await data2tree(data, element.key)
                 tmp_item.children = res
             } else {
                 tmp_item.prefix = () => h(NIcon, null, { default: () => h(CodeWorkingOutline) })
@@ -61,16 +60,15 @@ const data2tree = async (data: any[], parent: number) => {
     return tmp
 }
 
-const key = ref(0)
 const handleLoadProject = async () => {
     loading.value = true
     let items = (await Item.where({ 'project': props.project.id }).order({ id: 1 }).all()) as any[]
-    let res = await data2tree(items, 0)
+    let res = await data2tree(items, '')
 
     data.value = [{
         key: `project:${props.project.id}`,
         label: props.project.name,
-        value: props.project.id,
+        value: '',
         type: 'project',
         edit: false,
         children: res,
@@ -98,7 +96,7 @@ const renderLabel = ({ option, checked, selected }: TreeRenderProps): VNodeChild
                 option.label = val
             },
             onBlur: async () => {
-                let tmp = (await Item.where({ id: option.value }).obj() as Item)
+                let tmp = (await Item.where({ key: option.value }).obj() as Item)
                 if (tmp && tmp.key) {
                     tmp.label = option.label
                     tmp.last_update = new Date().getTime()
@@ -148,7 +146,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     option.children = []
                                 }
 
-                                let key = nanoid()
+                                let key = window.crypto.randomUUID()
                                 let label = 'New Api'
 
                                 let item = new Item()
@@ -156,7 +154,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 item.label = label
                                 item.type = 'api'
                                 item.project = props.project.id
-                                item.parent = option.type == 'project' ? 0 : option.value
+                                item.parent = option.type == 'project' ? '' : option.value
                                 item.last_update = new Date().getTime()
                                 let id = await item.save()
 
@@ -168,7 +166,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                             label: label,
                                             type: 'api',
                                             edit: true,
-                                            value: id,
+                                            value: key,
                                             prefix: () => h(NIcon, null, { default: () => h(CodeWorkingOutline) })
                                         })
                                     }, 100)
@@ -178,7 +176,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                         label: label,
                                         type: 'api',
                                         edit: true,
-                                        value: id,
+                                        value: key,
                                         prefix: () => h(NIcon, null, { default: () => h(CodeWorkingOutline) })
                                     })
                                 }
@@ -195,7 +193,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     option.children = []
                                 }
 
-                                let key = nanoid()
+                                let key = window.crypto.randomUUID()
                                 let label = 'New Folder'
 
                                 let item = new Item()
@@ -203,11 +201,11 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 item.label = label
                                 item.type = 'folder'
                                 item.project = props.project.id
-                                item.parent = option.type == 'project' ? 0 : option.value
+                                item.parent = option.type == 'project' ? '' : option.value
                                 item.last_update = new Date().getTime()
                                 item.request = null
                                 item.response = null
-                                let id = await item.save()
+                                await item.save()
 
                                 if (expandedKeys.value.indexOf(option.key as string) == -1) {
                                     expandedKeys.value.push(option.key)
@@ -217,7 +215,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                             label: label,
                                             type: 'folder',
                                             edit: true,
-                                            value: id,
+                                            value: key,
                                             prefix: () => h(NIcon, null, { default: () => h(FolderOutline) }),
                                             children: []
                                         })
@@ -228,7 +226,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                         label: label,
                                         type: 'folder',
                                         edit: true,
-                                        value: id,
+                                        value: key,
                                         prefix: () => h(NIcon, null, { default: () => h(FolderOutline) }),
                                         children: []
                                     })
@@ -256,11 +254,11 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     if (option.type == 'project') {
                                         emits('handleDeleteProject', props.project.id)
                                     } else {
-                                        let obj: any = await Item.where({ id: option.value }).obj()
+                                        let obj: any = await Item.where({ key: option.value }).obj()
                                         if (obj.last_sync) {
                                             // TODO: 删除远程
                                         }
-                                        await Item.where({ id: option.value }).delete()
+                                        await Item.where({ key: option.value }).delete()
                                     }
                                     if (expandedKeys.value.includes(option.key as string)) {
                                         expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
@@ -276,11 +274,11 @@ const nodeProps = ({ option }: { option: any }): any => {
                                             if (option.type == 'project') {
                                                 emits('handleDeleteProject', props.project.id)
                                             } else {
-                                                let obj: any = await Item.where({ id: option.value }).obj()
+                                                let obj: any = await Item.where({ key: option.value }).obj()
                                                 if (obj.last_sync) {
                                                     // TODO: 删除远程
                                                 }
-                                                await Item.where({ id: option.value }).delete()
+                                                await Item.where({ key: option.value }).delete()
                                             }
                                             if (expandedKeys.value.includes(option.key as string)) {
                                                 expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
@@ -323,9 +321,11 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 let items_upload: any[] = []
                                 for (let i = 0; i < sc.data.items_upload.length; i++) {
                                     let api: any = await Item.where({ key: sc.data.items_upload[i] }).get()
-                                    api.request = JSON.stringify(api.request)
-                                    api.response = JSON.stringify(api.response)
-                                    items_upload.push(api)
+                                    if (api && api.key) {
+                                        api.request = JSON.stringify(api.request)
+                                        api.response = JSON.stringify(api.response)
+                                        items_upload.push(api)
+                                    }
                                 }
                                 let sd: any = await sync_data({
                                     data: {
@@ -337,7 +337,6 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     token: store.config.token || ''
                                 })
                                 for (let i = 0; i < sd.data.length; i++) {
-                                    const element = sd.data[i]
                                     let api = (await Item.where({ key: sd.data[i].key }).obj() as Item)
                                     if (api && api.key) {
                                         api.request = sd.data[i].request ? JSON.parse(sd.data[i].request) : null
@@ -400,11 +399,11 @@ const nodeProps = ({ option }: { option: any }): any => {
                         props: {
                             onClick: async () => {
                                 if (store.config?.deleteNoConfirm) {
-                                    let obj: any = await Item.where({ id: option.value }).obj()
+                                    let obj: any = await Item.where({ key: option.value }).obj()
                                     if (obj.last_sync) {
                                         // TODO: 删除远程
                                     }
-                                    await Item.where({ id: option.value }).delete()
+                                    await Item.where({ key: option.value }).delete()
                                     emits('handleCloseTab', null, option.key)
                                     if (expandedKeys.value.includes(option.key as string)) {
                                         expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
@@ -417,11 +416,11 @@ const nodeProps = ({ option }: { option: any }): any => {
                                         content: `${t('copywriting.deleteApi')} ${option.label} ?`,
                                         positiveText: t('common.delete'),
                                         onPositiveClick: async () => {
-                                            let obj: any = await Item.where({ id: option.value }).obj()
+                                            let obj: any = await Item.where({ key: option.value }).obj()
                                             if (obj.last_sync) {
                                                 // TODO: 删除远程
                                             }
-                                            await Item.where({ id: option.value }).delete()
+                                            await Item.where({ key: option.value }).delete()
                                             emits('handleCloseTab', null, option.key)
                                             if (expandedKeys.value.includes(option.key as string)) {
                                                 expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
@@ -499,9 +498,9 @@ const handleDrop = async ({ node, dragNode, dropPosition }: TreeDropInfo) => {
         <n-spin :show="loading">
             <n-dropdown trigger="manual" size="small" placement="bottom-start" :show="showContextmenu"
                 :options="(optionsContextmenu as any)" :x="xPos" :y="yPos" @clickoutside="showContextmenu = false" />
-            <n-tree :key="key" :data="data" :selectable="false" @update:expanded-keys="handleExpand"
-                :node-props="nodeProps" expand-on-click :render-switcher-icon="renderSwitcherIcon"
-                :default-expanded-keys="expandedKeys" :render-label="renderLabel" draggable @drop="handleDrop" />
+            <n-tree :data="data" :selectable="false" @update:expanded-keys="handleExpand" :node-props="nodeProps"
+                expand-on-click :render-switcher-icon="renderSwitcherIcon" :default-expanded-keys="expandedKeys"
+                :render-label="renderLabel" draggable @drop="handleDrop" />
         </n-spin>
     </div>
 </template>
