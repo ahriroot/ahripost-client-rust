@@ -37,6 +37,15 @@ pub async fn sync_api(data: Value, server: String, token: String) -> Value {
 }
 
 #[tauri::command]
+pub async fn delete_api(data: Value, server: String, token: String) -> Value {
+    let href = format!("{}/client/api/delete_api", server);
+    match exec(data, href, token).await {
+        Ok(res) => res,
+        Err(err) => json!({ "error": err.to_string() }),
+    }
+}
+
+#[tauri::command]
 pub async fn sync_check(data: Value, server: String, token: String) -> Value {
     let href = format!("{}/client/api/sync_check", server);
     match exec(data, href, token).await {

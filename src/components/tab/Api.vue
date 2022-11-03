@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { h, ref, shallowRef, onMounted, onBeforeMount, computed, watch } from 'vue'
+import { h, ref, shallowRef, onMounted, onBeforeMount, computed, onBeforeUnmount } from 'vue'
 import {
-    NLayout, NH2, NInputGroup, NButton, NInput, useDialog, NSpin, NIcon,
+    NLayout, NTag, NInputGroup, NButton, NInput, NSpin, NIcon, NModal,
     NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns,
     NRadioGroup, NSpace, NRadio, NUpload, NPopover
 } from 'naive-ui'
-import { Add, Remove, Send, ReloadCircle } from '@vicons/ionicons5'
+import { Add, Remove, Send, ReloadCircle, CodeWorkingSharp } from '@vicons/ionicons5'
 import AInput from '@/components/AInput.vue'
 import ACheckbox from '@/components/ACheckbox.vue'
 import Item from '@/models/Item'
@@ -13,13 +13,19 @@ import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useIndexStore } from '@/store'
 import { request, sync_api } from '@/net/http'
-import { Request, Response } from '@/types/net/http'
+import { Request } from '@/types/net/http'
 import Editor from '@/components/Editor.vue'
 import Project from '@/models/Project'
+import { listen } from '@tauri-apps/api/event'
+import RenderVue from '@/components/Render.vue'
+import renderMd from '@/utils/renderMd'
+import renderCode from '@/utils/renderCode'
+
 
 window.$message = useMessage()
 const store = useIndexStore()
 const data = ref<any>({
+    template: '',
     request: {
         body: {
             type: 'form',
@@ -44,6 +50,7 @@ const emits = defineEmits<{
     (e: 'handleCloseTab', ev: null, id: string): void
 }>()
 
+const unlisten = ref<any>(null)
 onBeforeMount(async () => {
     height.value = store.config.apiAreaHeight
 
@@ -54,6 +61,26 @@ onBeforeMount(async () => {
         item.file = null
         return item
     })
+
+    unlisten.value = await listen<string>('ctrl-s', async (event) => {
+        if (event.payload == props.item) {
+            let obj: any = await Item.where({ key: props.item }).obj()
+            obj.last_update = new Date().getTime()
+            obj.template = data.value.template
+            obj.request = JSON.parse(JSON.stringify(data.value.request))
+            obj.response = JSON.parse(JSON.stringify(data.value.response))
+            obj.tag = false
+            obj.client = store.config.client
+            obj.save()
+        }
+    })
+
+})
+
+onBeforeUnmount(() => {
+    if (unlisten.value) {
+        unlisten.value()
+    }
 })
 
 const options = shallowRef<SelectOption[]>([
@@ -198,15 +225,11 @@ const columns = ref<DataTableColumns<any>>([
                         size: 'small',
                         quaternary: true,
                         onClick: () => {
-                            data.value.request.body.form.push({
-                                key: window.crypto.randomUUID(),
-                                checked: true,
-                                field: '',
-                                value: '',
-                                describe: '',
-                                default: '',
-                                must: true
-                            })
+                            if (data.value.request.tab === 'param') {
+                                data.value.request.params.splice(index, 1)
+                            } else if (data.value.request.tab === 'header') {
+                                data.value.request.headers.splice(index, 1)
+                            }
                         }
                     }, {
                         default: () => h(
@@ -242,16 +265,6 @@ const columns = ref<DataTableColumns<any>>([
                                 })
                             } else if (data.value.request.tab === 'header') {
                                 data.value.request.headers.push({
-                                    key: window.crypto.randomUUID(),
-                                    checked: true,
-                                    field: '',
-                                    value: '',
-                                    describe: '',
-                                    default: '',
-                                    must: true
-                                })
-                            } else if (data.value.request.tab === 'body' && data.value.request.body.type === 'form') {
-                                data.value.request.body.form.push({
                                     key: window.crypto.randomUUID(),
                                     checked: true,
                                     field: '',
@@ -527,42 +540,18 @@ const columnsForm = ref<DataTableColumns<any>>([
                         quaternary: true,
                         onClick: () => {
                             let key = window.crypto.randomUUID()
-                            if (data.value.request.tab === 'param') {
-                                data.value.request.params.push({
-                                    key: key,
-                                    checked: true,
-                                    field: '',
-                                    value: '',
-                                    describe: '',
-                                    default: '',
-                                    must: true
-                                })
-                                data.value.request.params_keys.push(key)
-                            } else if (data.value.request.tab === 'header') {
-                                data.value.request.headers.push({
-                                    key: key,
-                                    checked: true,
-                                    field: '',
-                                    value: '',
-                                    describe: '',
-                                    default: '',
-                                    must: true
-                                })
-                                data.value.request.headers_keys.push(key)
-                            } else if (data.value.request.tab === 'body' && data.value.request.body.type === 'form') {
-                                data.value.request.body.form.push({
-                                    key: key,
-                                    checked: true,
-                                    field: '',
-                                    value: '',
-                                    type: 'text',
-                                    file: null,
-                                    describe: '',
-                                    default: '',
-                                    must: true,
-                                })
-                                data.value.request.body.form_keys.push(key)
-                            }
+                            data.value.request.body.form.push({
+                                key: key,
+                                checked: true,
+                                field: '',
+                                value: '',
+                                type: 'text',
+                                file: null,
+                                describe: '',
+                                default: '',
+                                must: true,
+                            })
+                            data.value.request.body.form_keys.push(key)
                         }
                     }, {
                         default: () => h(
@@ -597,9 +586,9 @@ const href = computed({
 // })
 const handleSend = async () => {
     let url = new URL(data.value.request.path)
-    let search = data.value.request.params.filter((item: any) => data.value.request.params_keys.includes(item.key)).map((item: any) => {
-        return `${item.field}=${item.value}`
-    }).join('&')
+    // let search = data.value.request.params.filter((item: any) => data.value.request.params_keys.includes(item.key)).map((item: any) => {
+    //     return `${item.field}=${item.value}`
+    // }).join('&')
     let params = data.value.request.params.filter((item: any) => data.value.request.params_keys.includes(item.key)).map((item: any) => {
         return {
             field: item.field,
@@ -659,6 +648,7 @@ const handleSend = async () => {
     data.value.response.statusText = response.canonical_reason
     data.value.response.headers = response.headers
     data.value.response.tab = 'body'
+    data.value.response.datetime = new Date().getTime()
 
     let contentType = response.headers.find((item: any) => item.field.toLowerCase() === 'content-type')
     if (contentType) {
@@ -752,19 +742,6 @@ onMounted(async () => {
             responseRef.value.setValue(data.value.response.body.json || '')
         }
     }, 1000)
-
-    tabApiRef.value?.addEventListener('keydown', async (ev) => {
-        if (ev.ctrlKey && ev.key == 's') {
-            ev.preventDefault()
-            let obj: any = await Item.where({ key: props.item }).obj()
-            obj.last_update = new Date().getTime()
-            obj.request = JSON.parse(JSON.stringify(data.value.request))
-            obj.response = JSON.parse(JSON.stringify(data.value.response))
-            obj.tag = false
-            obj.client = store.config.client
-            obj.save()
-        }
-    })
 })
 
 const loading = ref(false)
@@ -803,7 +780,7 @@ const handleSync = async () => {
                     host
                 })
             }
-            let project: any = await Project.where({ id: apis[0].project }).get()
+            let project: any = await Project.where({ key: apis[0].project }).get()
             let res: any = await sync_api({
                 data: { apis: apis, project: project },
                 server: host,
@@ -835,9 +812,59 @@ const handleSync = async () => {
     } catch { }
     loading.value = false
 }
+
+const formatDatetime = (time: number) => {
+    if (time) {
+        let date = new Date(time)
+        return date.toLocaleString()
+    }
+    return 'not request'
+}
+
+const showTemplate = ref(false)
+const showRender = ref(false)
+const showCode = ref(false)
+const render = ref('')
+const code = ref('')
+const handleShowRender = async () => {
+    render.value = await renderMd(data.value)
+    showRender.value = true
+}
+const handleShowCode = async () => {
+    code.value = await renderCode(data.value)
+    showCode.value = true
+}
 </script>
 
 <template>
+    <n-modal v-model:show="showRender" preset="card" style="width: 80%; max-width: 1000px;" title="Doc Template"
+        size="small" :bordered="false">
+        <div style="height: 80vh; overflow: hidden;">
+            <div style="height: 80vh; overflow-y: auto; padding: 0 30px">
+                <RenderVue :value="render" theme="dark" />
+            </div>
+        </div>
+    </n-modal>
+    <n-modal v-model:show="showCode" preset="card" style="width: 80%; max-width: 1000px;" title="Doc Template"
+        size="small" :bordered="false">
+        <div style="height: 80vh; overflow: hidden;">
+            <div style="height: 80vh; overflow-y: auto; padding: 0 30px">
+                <RenderVue :value="code" theme="dark" />
+            </div>
+        </div>
+    </n-modal>
+    <n-modal v-model:show="showTemplate" preset="card" style="width: 80%; max-width: 1000px" title="Doc Template"
+        size="small" :bordered="false">
+        <div style="padding-bottom: 5px;">
+            <n-button secondary @click="handleShowRender">
+                Preview Docs
+            </n-button>&nbsp;
+            <n-button secondary @click="handleShowCode">
+                Request Code
+            </n-button>
+        </div>
+        <n-input v-model:value="data.template" style="font-size: 20px;" type="textarea" :rows="14" placeholder="文档模板" />
+    </n-modal>
     <div class="tab-api" ref="tabApiRef" tabindex="1">
         <div ref="topRef" class="top" :style="`height: ${height - 2}px; cursor: ${resizeable ? 'ns-resize' : cursor}`">
             <div class="title" style="display: flex; justify-content: space-between; align-items: center;">
@@ -982,8 +1009,41 @@ const handleSync = async () => {
                                 <pre>{{ data.response.body.html }}</pre>
                             </div>
                         </n-tab-pane>
+                        <template #prefix>
+                            <div style="padding-left: 12px">
+                                <n-button quaternary size="small" @click="showTemplate = true">
+                                    <template #icon>
+                                        <n-icon>
+                                            <CodeWorkingSharp />
+                                        </n-icon>
+                                    </template>
+                                </n-button>
+                            </div>
+                        </template>
                         <template #suffix>
-                            {{ data.response.status }}&nbsp;{{ data.response.statusText }}&nbsp;&nbsp;
+                            <div style="padding-right: 10px">
+                                <n-tag type="success" v-if="data.response.status >= 200 && data.response.status < 300"
+                                    size="small" style="margin-right: 10px">
+                                    {{ data.response.status }}&nbsp;{{ data.response.statusText }}
+                                </n-tag>
+                                <n-tag type="info" v-else-if="data.response.status >= 300 && data.response.status < 400"
+                                    size="small" style="margin-right: 10px">
+                                    {{ data.response.status }}&nbsp;{{ data.response.statusText }}
+                                </n-tag>
+                                <n-tag type="warning"
+                                    v-else-if="data.response.status >= 400 && data.response.status < 500" size="small"
+                                    style="margin-right: 10px">
+                                    {{ data.response.status }}&nbsp;{{ data.response.statusText }}
+                                </n-tag>
+                                <n-tag type="error" v-else-if="data.response.status >= 500" size="small"
+                                    style="margin-right: 10px">
+                                    {{ data.response.status }}&nbsp;{{ data.response.statusText }}
+                                </n-tag>
+                                <n-tag v-else size="small" style="margin-right: 10px">
+                                    {{ data.response.status }}&nbsp;{{ data.response.statusText }}
+                                </n-tag>
+                                <span style="font-size: 12px;">{{ formatDatetime(data.response.datetime) }}</span>
+                            </div>
                         </template>
                     </n-tabs>
                 </n-layout>

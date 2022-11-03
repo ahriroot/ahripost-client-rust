@@ -21,6 +21,7 @@ import create from '@/models'
 import { OpenTabMesagae } from '@/types/store'
 import { load_project, start_login_server } from '@/net/http'
 import { open } from '@tauri-apps/api/shell'
+import { emit } from '@tauri-apps/api/event'
 
 
 const store = useIndexStore()
@@ -145,11 +146,20 @@ const handleNewProject = async () => {
     showNewProject.value = false
 }
 
-const handleDeleteProject = async (id: number) => {
-    let project = projects.value.find((p: any) => p.id == id)
+const handleDeleteProject = async (key: number) => {
+    let project = projects.value.find((p: any) => p.key == key)
     if (project) {
-        await Project.where({ id: id }).delete()
-        projects.value = projects.value.filter((item) => item.id != id)
+        let items = await Item.where({ project: key }).all() as any[]
+        let keys: string[] = []
+        for (let i = 0; i < items.length; i++) {
+            let res: any = await Item.where({ id: items[i].id }).delete()
+            if (res) {
+                keys.push(res.key)
+            }
+        }
+        tabs.value = tabs.value.filter((t: any) => !keys.includes(t.key))
+        await Project.where({ key: key }).delete()
+        projects.value = projects.value.filter((item) => item.key != key)
         await handleLoadProjects()
     }
 }
@@ -204,7 +214,33 @@ const width = ref(store.config.sideBarWidth)
 const oldWidth = ref(250)
 const cursor = ref('default')
 const currentMoveX = ref(0)
+const timer = ref<any>(null)
 onMounted(async () => {
+    document.body.addEventListener('keydown', async (ev) => {
+        ev.stopPropagation()
+        if (ev.key == 's') {
+            if (ev.ctrlKey) {
+                await emit('ctrl-s', tab.value)
+                return
+            }
+        }
+        let input_keys = [
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+            'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*',
+            '/', '(', ')', '[', ']', '{', '}', '=', '!', '@', '#', '$', '%',
+            '^', '&', '*', '_', '+', '|', '\\', ':', ';', '"', "'", ',', '.',
+            '<', '>', '?', '`', '~', ' ', 'Backspace', 'Enter', 'Tab', 'Delete'
+        ]
+        if (input_keys.includes(ev.key)) {
+            if (timer.value) {
+                clearTimeout(timer.value)
+            }
+            timer.value = setTimeout(async () => {
+                await emit('ctrl-s', tab.value)
+            }, 5000)
+        }
+    })
     if (sidebarRef.value && contentRef.value) {
         sidebarRef.value.addEventListener('mousedown', (ev) => {
             if (cursor.value == 'ew-resize') {
@@ -326,11 +362,9 @@ const handleDownloadProject = async () => {
     if (download) {
         let has: any = await Project.where({ key: download.key }).get()
         if (has && has.key) {
-            showNewProject.value = false
             window.$message.error('项目已存在')
             return
         }
-        console.log(download)
         let p = new Project()
         p._id = download._id
         p.user = download.user._id
@@ -374,16 +408,6 @@ const handleDownloadProject = async () => {
                         </n-checkbox>
                         <br>
                         <br>
-                        <n-button :loading="loadingClear" size="small" @click="handleClearAllData">
-                            {{ t('copywriting.clearCache') }}
-                        </n-button>
-                        <br>
-                        <br>
-                        <n-button :loading="updateLoading" size="small" @click="handleUpdate">
-                            {{ t('copywriting.checkUpdate') }}
-                        </n-button>
-                        <br>
-                        <br>
                         <n-input-group>
                             <n-input v-model:value="host" placeholder="Host" />
                             <n-button tertiary @click="handleSetHost" :loading="hostLoading">
@@ -399,6 +423,16 @@ const handleDownloadProject = async () => {
                                 SET
                             </n-button>
                         </n-input-group>
+                        <br>
+                        <br>
+                        <n-button :loading="loadingClear" size="small" @click="handleClearAllData">
+                            {{ t('copywriting.clearCache') }}
+                        </n-button>
+                        <br>
+                        <br>
+                        <n-button :loading="updateLoading" size="small" @click="handleUpdate">
+                            {{ t('copywriting.checkUpdate') }}
+                        </n-button>
                         <br>
                         <br>
                         <div>Version: {{ tauriConfig.package.version }}</div>
@@ -433,7 +467,7 @@ const handleDownloadProject = async () => {
                     <div id="main" class="nocopy">
                         <aside class="side nocopy" :class="store.config?.showSideBar ? '' : 'show'">
                             <div class="sidebar">
-                                <n-button circle quaternary size="small" @click.stop="handleLogin">
+                                <n-button v-show="false" circle quaternary size="small" @click.stop="handleLogin">
                                     <template #icon>
                                         <n-icon>
                                             <PersonCircleOutline />

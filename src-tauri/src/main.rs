@@ -26,6 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         interface::sync_check,
         interface::sync_data,
         interface::sync_api,
+        interface::delete_api,
         interface::load_project,
     ]);
     app.run(tauri::generate_context!())

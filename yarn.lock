@@ -363,6 +363,11 @@ de-indent@^1.0.2:
   resolved "https://registry.npmmirror.com/de-indent/-/de-indent-1.0.2.tgz#b2038e846dc33baa5796128d0804b455b8c1e21d"
   integrity sha512-e/1zu3xH5MQryN2zdVaF0OrdNLUbvWxzMbi+iNA6Bky7l1RoP8a2fIbRocyHclXt/arDrrR6lL3TqFD9pMQTsg==
 
+diff-match-patch@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/diff-match-patch/-/diff-match-patch-1.0.5.tgz#abb584d5f10cd1196dfc55aa03701592ae3f7b37"
+  integrity sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==
+
 esbuild-android-64@0.15.12:
   version "0.15.12"
   resolved "https://registry.npmmirror.com/esbuild-android-64/-/esbuild-android-64-0.15.12.tgz#5e8151d5f0a748c71a7fbea8cee844ccf008e6fc"
@@ -686,6 +691,13 @@ vdirs@^0.1.4, vdirs@^0.1.8:
   integrity sha512-H9V1zGRLQZg9b+GdMk8MXDN2Lva0zx72MPahDKc30v+DtwKjfyOSXWRIX4t2mhDubM1H09gPhWeth/BJWPHGUw==
   dependencies:
     evtd "^0.2.2"
+
+vditor@^3.8.18:
+  version "3.8.18"
+  resolved "https://registry.yarnpkg.com/vditor/-/vditor-3.8.18.tgz#078b1eb1b00eaa27ab99013820e65d566c0648d3"
+  integrity sha512-RSKCPKy0zrKwkI5GuEXUSxsxUhEO8hcIQivj5JVYvtUDWHfEOS1W7xKP8+zFKvoZNC4qm8zly2qErSMzHcEbNQ==
+  dependencies:
+    diff-match-patch "^1.0.5"
 
 vfonts@^0.0.3:
   version "0.0.3"

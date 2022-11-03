@@ -11,7 +11,8 @@ import { useI18n } from 'vue-i18n'
 import { useIndexStore } from '@/store'
 import { OpenTabMesagae } from '@/types/store'
 import Project from '@/models/Project'
-import { sync_check, sync_data } from '@/net/http'
+import { delete_api, sync_check, sync_data } from '@/net/http'
+import { emit } from 'process'
 
 window.$message = useMessage()
 const store = useIndexStore()
@@ -108,6 +109,46 @@ const renderLabel = ({ option, checked, selected }: TreeRenderProps): VNodeChild
     } else {
         return h('span', {}, option.label)
     }
+}
+
+const getChildren = (nodes: TreeOption[]): string[] => {
+    let keys: string[] = []
+    nodes.forEach((node) => {
+        keys.push(node.value as string)
+        if (node.type == 'folder' && node.children && node.children.length > 0) {
+            keys = keys.concat(getChildren(node.children as TreeOption[]))
+        }
+    })
+    return keys
+}
+
+const deleteNodes = async (nodes: TreeOption[]) => {
+    // let obj: any = await Item.where({ key: option.value }).obj()
+    // if (obj.last_sync) {
+    //     // TODO: 删除远程
+    // }
+    // await Item.where({ key: option.value }).delete()
+
+    let keys = getChildren(nodes)
+
+    let host = store.config.host
+    if (!host) {
+        host = 'https://ahripost.ahriknow.com'
+        store.updateConfig({
+            ...store.config,
+            host
+        })
+    }
+    let da: any = await delete_api({
+        data: { keys: keys, project: props.project.key },
+        server: host,
+        token: store.config.token || ''
+    })
+    for (let i = 0; i < da.data.length; i++) {
+        emits('handleCloseTab', null, da.data[i])
+        await Item.where({ key: da.data[i] }).delete()
+    }
+    expandedKeys.value = expandedKeys.value.filter((key) => !da.data.includes(key))
 }
 
 const expandedKeys = ref<string[]>([])
@@ -209,6 +250,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 item.client = store.config.client
                                 item.request = ''
                                 item.response = ''
+                                item.template = ''
                                 await item.save()
 
                                 if (expandedKeys.value.indexOf(option.key as string) == -1) {
@@ -256,16 +298,11 @@ const nodeProps = ({ option }: { option: any }): any => {
                             onClick: async () => {
                                 if (store.config?.deleteNoConfirm) {
                                     if (option.type == 'project') {
-                                        emits('handleDeleteProject', props.project.key)
+                                        loading.value = true
+                                        await emits('handleDeleteProject', props.project.key)
+                                        loading.value = false
                                     } else {
-                                        let obj: any = await Item.where({ key: option.value }).obj()
-                                        if (obj.last_sync) {
-                                            // TODO: 删除远程
-                                        }
-                                        await Item.where({ key: option.value }).delete()
-                                    }
-                                    if (expandedKeys.value.includes(option.key as string)) {
-                                        expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
+                                        await deleteNodes([option])
                                     }
                                     showContextmenu.value = false
                                     await handleLoadProject()
@@ -276,16 +313,11 @@ const nodeProps = ({ option }: { option: any }): any => {
                                         positiveText: t('common.delete'),
                                         onPositiveClick: async () => {
                                             if (option.type == 'project') {
-                                                emits('handleDeleteProject', props.project.key)
+                                                loading.value = true
+                                                await emits('handleDeleteProject', props.project.key)
+                                                loading.value = false
                                             } else {
-                                                let obj: any = await Item.where({ key: option.value }).obj()
-                                                if (obj.last_sync) {
-                                                    // TODO: 删除远程
-                                                }
-                                                await Item.where({ key: option.value }).delete()
-                                            }
-                                            if (expandedKeys.value.includes(option.key as string)) {
-                                                expandedKeys.value.splice(expandedKeys.value.indexOf(option.key as string), 1)
+                                                await deleteNodes([option])
                                             }
                                             showContextmenu.value = false
                                             await handleLoadProject()
@@ -340,6 +372,12 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     if (sc.error && typeof sc.error == 'string') {
                                         window.$message.error(sc.error)
                                     }
+                                    for (let i = 0; i < sc.data.keys_delete.length; i++) {
+                                        let res: any = await Item.where({ key: sc.data.keys_delete[i] }).delete()
+                                        if (res) {
+                                            emits('handleCloseTab', null, res.key)
+                                        }
+                                    }
                                     let items_upload: any[] = []
                                     for (let i = 0; i < sc.data.items_upload.length; i++) {
                                         let api: any = await Item.where({ key: sc.data.items_upload[i] }).get()
@@ -373,6 +411,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                             api.parent = sd.data[i].parent
                                             api.last_sync = sd.data[i].last_sync
                                             api.last_update = sd.data[i].last_update
+                                            api.template = sd.data[i].template
                                             api.tag = false
                                             api.client = store.config.client
                                             await api.save()
@@ -388,6 +427,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                             api.parent = sd.data[i].parent
                                             api.last_sync = sd.data[i].last_sync
                                             api.last_update = sd.data[i].last_update
+                                            api.template = sd.data[i].template
                                             api.tag = false
                                             api.client = store.config.client
                                             await api.save()

@@ -124,3 +124,27 @@ body {
     justify-content: center;
     text-align: center;
 }
+
+
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: #ccc4;
+}
+
+::-webkit-scrollbar-corner {
+    display: none;
+}
+
+pre code {
+    font-size: 16px !important;
+}

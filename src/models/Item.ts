@@ -26,6 +26,7 @@ class Item extends BaseModel {
     client = StringField({ nullable: false, default: '' })
     last_sync = InteagerField({ nullable: false, default: 0 })
     last_update = InteagerField({ nullable: false, default: 0 })
+    template = StringField({ nullable: false, default: '{{ title }}\n\n{{ describe }}\n\n{{ detail }}\n\n{{ example }}\n' })
     request = ObjectField({
         nullable: true, default: {
             describe: '',
@@ -50,7 +51,7 @@ class Item extends BaseModel {
                 must: true
             }],
             body: {
-                type: 'json',
+                type: 'none',
                 form_keys: [],
                 form: [],
                 json: `{}`
@@ -59,12 +60,13 @@ class Item extends BaseModel {
     })
     response = ObjectField({
         nullable: true, default: {
-            status: '',
-            statusText: '',
+            status: 0,
+            statusText: 'None',
             headers: [],
             tab: 'body',
+            datetime: 0,
             body: {
-                type: 'pretty',
+                type: 'raw',
                 html: '',
                 json: `{}`,
                 text: ''
