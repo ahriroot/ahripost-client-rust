@@ -226,7 +226,7 @@ const columns = ref<DataTableColumns<any>>([
                         quaternary: true,
                         onClick: () => {
                             if (data.value.request.tab === 'param') {
-                                data.value.request.params.splice(index, 1)
+                                data.value.request.query.splice(index, 1)
                             } else if (data.value.request.tab === 'header') {
                                 data.value.request.headers.splice(index, 1)
                             }
@@ -254,7 +254,7 @@ const columns = ref<DataTableColumns<any>>([
                         quaternary: true,
                         onClick: () => {
                             if (data.value.request.tab === 'param') {
-                                data.value.request.params.push({
+                                data.value.request.query.push({
                                     key: window.crypto.randomUUID(),
                                     checked: true,
                                     field: '',
@@ -578,7 +578,7 @@ const href = computed({
     }
 })
 
-// watch(() => data.value.request?.params, async (_) => {
+// watch(() => data.value.request?.query, async (_) => {
 
 // }, {
 //     immediate: false,
@@ -586,10 +586,10 @@ const href = computed({
 // })
 const handleSend = async () => {
     let url = new URL(data.value.request.path)
-    // let search = data.value.request.params.filter((item: any) => data.value.request.params_keys.includes(item.key)).map((item: any) => {
+    // let search = data.value.request.query.filter((item: any) => data.value.request.query_keys.includes(item.key)).map((item: any) => {
     //     return `${item.field}=${item.value}`
     // }).join('&')
-    let params = data.value.request.params.filter((item: any) => data.value.request.params_keys.includes(item.key)).map((item: any) => {
+    let query = data.value.request.query.filter((item: any) => data.value.request.query_keys.includes(item.key)).map((item: any) => {
         return {
             field: item.field,
             value: item.value
@@ -634,7 +634,8 @@ const handleSend = async () => {
         host: url.hostname,
         port: url.port,
         path: url.pathname,
-        params: params,
+        params: [],
+        query: query,
         headers: headers,
         body_type: data.value.request.body.type,
         form: form,
@@ -917,8 +918,8 @@ const handleShowCode = async () => {
                     </template>
                     <n-layout position="absolute" style="top: 0; bottom: 0; background: #21252b"
                         :native-scrollbar="false">
-                        <n-data-table v-if="data.request?.params" size="small" :columns="columns"
-                            v-model:checked-row-keys="data.request.params_keys" :data="data.request.params"
+                        <n-data-table v-if="data.request?.query" size="small" :columns="columns"
+                            v-model:checked-row-keys="data.request.query_keys" :data="data.request.query"
                             :single-line="false" :bordered="false" />
                     </n-layout>
                 </n-tab-pane>
@@ -952,7 +953,7 @@ const handleShowCode = async () => {
                     </div>
                     <n-layout v-show="data.request.body.type == 'form'" position="absolute"
                         style="top: 30px; bottom: 0; background: #21252b" :native-scrollbar="false">
-                        <n-data-table v-if="data.request?.params" size="small" :columns="columnsForm"
+                        <n-data-table v-if="data.request?.query" size="small" :columns="columnsForm"
                             v-model:checked-row-keys="data.request.body.form_keys" :data="data.request.body.form"
                             :single-line="false" :bordered="false" />
                     </n-layout>

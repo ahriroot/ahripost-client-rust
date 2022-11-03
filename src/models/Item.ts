@@ -38,6 +38,8 @@ class Item extends BaseModel {
             href: '',
             search: '',
             tab: 'param',
+            query_keys: [],
+            query: [],
             params_keys: [],
             params: [],
             headers_keys: ['Content-Type'],
@@ -76,51 +78,3 @@ class Item extends BaseModel {
 }
 
 export default Item
-
-// {
-//     updated: 0,
-//     method: 'GET',
-//     protocol: '',
-//     host: '',
-//     port: '',
-//     path: '',
-//     href: '',
-//     search: '',
-//     tab: 'body',
-//     params_keys: [],
-//     params: [{
-//         key: 'k1',
-//         checked: true,
-//         field: 'k1',
-//         value: 'v1',
-//         describe: 'describe',
-//         default: '',
-//         must: true,
-//     }],
-//     headers_keys: [],
-//     headers: [{
-//         key: 'k1',
-//         checked: true,
-//         field: 'k1',
-//         value: 'v1',
-//         describe: 'describe',
-//         default: '',
-//         must: true,
-//     }],
-//     body: {
-//         type: 'json',
-//         form_keys: [],
-//         form: [{
-//             key: 'k1',
-//             checked: true,
-//             field: 'k1',
-//             type: 'text',
-//             value: 'v1',
-//             file: null,
-//             describe: 'describe',
-//             default: '',
-//             must: true,
-//         }],
-//         json: `{"k1": "v1"}`
-//     }
-// }

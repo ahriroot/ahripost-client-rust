@@ -25,6 +25,7 @@ pub struct Request {
     pub method: String,
     pub host: String,
     pub port: String,
+    pub query: Vec<Param>,
     pub params: Vec<Param>,
     pub path: String,
     pub headers: Vec<Header>,

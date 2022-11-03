@@ -123,10 +123,10 @@ pub async fn request(request: entity::Request) -> Value {
         "{}//{}:{}{}",
         request.protocol, request.host, request.port, request.path
     );
-    let params = request
-        .params
+    let query = request
+        .query
         .iter()
-        .map(|param| (param.field.as_str(), param.value.as_str()))
+        .map(|query| (query.field.as_str(), query.value.as_str()))
         .collect::<Vec<(&str, &str)>>();
     let mut headers = reqwest::header::HeaderMap::new();
     for header in request.headers {
@@ -151,7 +151,6 @@ pub async fn request(request: entity::Request) -> Value {
     // let file_byte = std::fs::read(file_path).unwrap();
     // let part = reqwest::multipart::Part::bytes(Cow::from(file_byte)).file_name("test.txt");
     // let form = reqwest::multipart::Form::new().part("file", part);
-    println!("href: {}", href);
     let mut response_result = reqwest::Client::new()
         .request(
             match request.method.as_str() {
@@ -167,7 +166,7 @@ pub async fn request(request: entity::Request) -> Value {
             },
             href.as_str(),
         )
-        .query(&params)
+        .query(&query)
         .headers(headers);
     if request.body_type.as_str() == "json" {
         let json_data: Value = serde_json::from_str(request.json.as_str()).unwrap();
