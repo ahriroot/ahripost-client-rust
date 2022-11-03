@@ -179,7 +179,7 @@ onBeforeMount(async () => {
                 pageSize: 20,
                 lang: 'zh-CN',
                 token: '',
-                host: 'https://ahripost.ahriknow.com',
+                host: 'https://post.api.ahriknow.com',
                 client: window.crypto.randomUUID()
             }, false)
         }
@@ -336,7 +336,7 @@ const remoteProjects = ref<Project[]>([])
 const handleLoadProject = async () => {
     let host = store.config.host
     if (!host) {
-        host = 'https://ahripost.ahriknow.com'
+        host = 'https://post.api.ahriknow.com'
         store.updateConfig({
             ...store.config,
             host

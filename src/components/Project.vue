@@ -133,7 +133,7 @@ const deleteNodes = async (nodes: TreeOption[]) => {
 
     let host = store.config.host
     if (!host) {
-        host = 'https://ahripost.ahriknow.com'
+        host = 'https://post.api.ahriknow.com'
         store.updateConfig({
             ...store.config,
             host
@@ -343,7 +343,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                 try {
                                     let host = store.config.host
                                     if (!host) {
-                                        host = 'https://ahripost.ahriknow.com'
+                                        host = 'https://post.api.ahriknow.com'
                                         store.updateConfig({
                                             ...store.config,
                                             host

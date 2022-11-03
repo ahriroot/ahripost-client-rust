@@ -775,7 +775,7 @@ const handleSync = async () => {
         if (apis.length > 0) {
             let host = store.config.host
             if (!host) {
-                host = 'https://ahripost.ahriknow.com'
+                host = 'https://post.api.ahriknow.com'
                 store.updateConfig({
                     ...store.config,
                     host
