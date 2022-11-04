@@ -8,10 +8,16 @@ const en = {
         open: 'Open',
         load: 'Load',
         sync: 'Sync',
+        set: 'Set',
     },
     project: {
         new: 'New Project',
         name: 'Project Name',
+    },
+    api: {
+        document: 'Api Document',
+        request: 'Request Example',
+        variable: 'Variable',
     },
     setting: {
         title: 'Setting',
@@ -28,8 +34,21 @@ const en = {
         deleteFolder: 'Delete Folder',
         deleteApi: 'Delete Api',
         clearCache: 'Clear Cache',
+        clearData: 'Clear Data',
         checkUpdate: 'Check Update',
         noConfirmationForDeletion: 'No confirmation for deletion',
+        loadRemote: 'Load Remote',
+        apiName: 'Api Name',
+        apiDescribe: 'Api Describe',
+        apiDetail: 'Api Detail. Includes variable: (path / header / query / body)',
+        reqExample: 'Request Example. Includes variable: (datetime / request / response)',
+        apiPath: 'Request Path and Query',
+        apiHeader: 'Request Header',
+        apiQuery: 'Request Query',
+        apiBody: 'Request Body',
+        apiDatetime: 'Request Datetime',
+        reqDetail: 'Request Detail',
+        resDetail: 'Response Detail',
     }
 }
 

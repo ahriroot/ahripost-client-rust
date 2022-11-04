@@ -3,7 +3,7 @@ import { h, ref, shallowRef, onMounted, onBeforeMount, computed, onBeforeUnmount
 import {
     NLayout, NTag, NInputGroup, NButton, NInput, NSpin, NIcon, NModal,
     NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns,
-    NRadioGroup, NSpace, NRadio, NUpload, NPopover
+    NRadioGroup, NSpace, NRadio, NUpload, NPopover, NTable,
 } from 'naive-ui'
 import { Add, Remove, Send, ReloadCircle, CodeWorkingSharp } from '@vicons/ionicons5'
 import AInput from '@/components/AInput.vue'
@@ -20,6 +20,7 @@ import { listen } from '@tauri-apps/api/event'
 import RenderVue from '@/components/Render.vue'
 import renderMd from '@/utils/renderMd'
 import renderCode from '@/utils/renderCode'
+const { t } = useI18n()
 
 
 window.$message = useMessage()
@@ -822,6 +823,7 @@ const formatDatetime = (time: number) => {
     return 'not request'
 }
 
+const showVariable = ref(false)
 const showTemplate = ref(false)
 const showRender = ref(false)
 const showCode = ref(false)
@@ -835,33 +837,88 @@ const handleShowCode = async () => {
     code.value = await renderCode(data.value)
     showCode.value = true
 }
+const handleShowVariable = async () => {
+    showVariable.value = true
+}
 </script>
 
 <template>
-    <n-modal v-model:show="showRender" preset="card" style="width: 80%; max-width: 1000px;" title="Doc Template"
-        size="small" :bordered="false">
+    <n-modal v-model:show="showRender" preset="card" style="width: 80%; max-width: 1000px" size="small"
+        :bordered="false">
         <div style="height: 80vh; overflow: hidden;">
             <div style="height: 80vh; overflow-y: auto; padding: 0 30px">
                 <RenderVue :value="render" theme="dark" />
             </div>
         </div>
     </n-modal>
-    <n-modal v-model:show="showCode" preset="card" style="width: 80%; max-width: 1000px;" title="Doc Template"
-        size="small" :bordered="false">
+    <n-modal v-model:show="showCode" preset="card" style="width: 80%; max-width: 1000px" size="small" :bordered="false">
         <div style="height: 80vh; overflow: hidden;">
             <div style="height: 80vh; overflow-y: auto; padding: 0 30px">
                 <RenderVue :value="code" theme="dark" />
             </div>
         </div>
     </n-modal>
-    <n-modal v-model:show="showTemplate" preset="card" style="width: 80%; max-width: 1000px" title="Doc Template"
-        size="small" :bordered="false">
+    <n-modal v-model:show="showVariable" preset="card" style="max-width: 600px" size="small" :bordered="false">
+        <n-table :bordered="false" :single-line="false" size="small">
+            <tbody>
+                <tr>
+                    <td>title</td>
+                    <td>{{ t('copywriting.apiName') }}</td>
+                </tr>
+                <tr>
+                    <td>describe</td>
+                    <td>{{ t('copywriting.apiDescribe') }}</td>
+                </tr>
+                <tr>
+                    <td>detail</td>
+                    <td>{{ t('copywriting.apiDetail') }}</td>
+                </tr>
+                <tr>
+                    <td>example</td>
+                    <td>{{ t('copywriting.reqExample') }}</td>
+                </tr>
+                <tr>
+                    <td>path</td>
+                    <td>{{ t('copywriting.apiPath') }}</td>
+                </tr>
+                <tr>
+                    <td>header</td>
+                    <td>{{ t('copywriting.apiHeader') }}</td>
+                </tr>
+                <tr>
+                    <td>query</td>
+                    <td>{{ t('copywriting.apiQuery') }}</td>
+                </tr>
+                <tr>
+                    <td>body</td>
+                    <td>{{ t('copywriting.apiBody') }}</td>
+                </tr>
+                <tr>
+                    <td>datetime</td>
+                    <td>{{ t('copywriting.apiDatetime') }}</td>
+                </tr>
+                <tr>
+                    <td>request</td>
+                    <td>{{ t('copywriting.reqDetail') }}</td>
+                </tr>
+                <tr>
+                    <td>response</td>
+                    <td>{{ t('copywriting.resDetail') }}</td>
+                </tr>
+            </tbody>
+        </n-table>
+    </n-modal>
+    <n-modal v-model:show="showTemplate" preset="card" style="width: 80%; max-width: 1000px" size="small"
+        :bordered="false">
         <div style="padding-bottom: 5px;">
             <n-button secondary @click="handleShowRender">
-                Preview Docs
+                {{ t('api.document') }}
             </n-button>&nbsp;
             <n-button secondary @click="handleShowCode">
-                Request Code
+                {{ t('api.request') }}
+            </n-button>&nbsp;
+            <n-button secondary @click="handleShowVariable">
+                {{ t('api.variable') }}
             </n-button>
         </div>
         <n-input v-model:value="data.template" style="font-size: 20px;" type="textarea" :rows="14" placeholder="文档模板" />

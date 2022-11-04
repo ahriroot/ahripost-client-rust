@@ -9,7 +9,7 @@
     },
     "package": {
         "productName": "AhriPost",
-        "version": "0.1.0"
+        "version": "0.1.1"
     },
     "tauri": {
         "allowlist": {
@@ -74,7 +74,7 @@
                 "title": "AhriPost",
                 "width": 1366,
                 "center": true,
-                "visible": true
+                "visible": false
             },
             {
                 "width": 400,
@@ -83,7 +83,7 @@
                 "url": "splashscreen.html",
                 "label": "splashscreen",
                 "center": true,
-                "visible": false
+                "visible": true
             }
         ]
     }

@@ -88,12 +88,26 @@ const handleCheckedChange = async (val: boolean) => {
 }
 
 const loadingClear = ref(false)
-const handleClearAllData = async () => {
+const handleClearAllCache = async () => {
     loadingClear.value = true
     localStorage.clear()
     setTimeout(() => {
         loadingClear.value = false
     }, 1000)
+}
+
+const handleClearAllData = async () => {
+    loadingClear.value = true
+    localStorage.clear()
+    let req = indexedDB.deleteDatabase("dbname")
+    req.onsuccess = () => {
+        window.$message.success("Deleted database successfully")
+        loadingClear.value = false
+    }
+    req.onerror = () => {
+        window.$message.error("Couldn't delete database")
+        loadingClear.value = false
+    }
 }
 
 const showUpdateInfo = ref(false)
@@ -398,7 +412,7 @@ const handleDownloadProject = async () => {
                         <n-button size="small" @click="handleCancelUpdate">{{ t('common.cancel') }}</n-button>
                     </n-modal>
 
-                    <n-modal v-model:show="showSetting" preset="card" style="width: 600px;" :title="t('setting.title')"
+                    <n-modal v-model:show="showSetting" preset="card" style="width: 700px;" :title="t('setting.title')"
                         size="small">
                         <n-select size="small" v-model:value="locale" :options="langs"
                             @update:value="handleUpdateLang" />
@@ -409,25 +423,30 @@ const handleDownloadProject = async () => {
                         <br>
                         <br>
                         <n-input-group>
-                            <n-input v-model:value="host" placeholder="Host" />
+                            <n-input v-model:value="host" @change="handleSetHost" placeholder="Host" />
                             <n-button tertiary @click="handleSetHost" :loading="hostLoading">
-                                SET
+                                {{ t('common.set') }}
                             </n-button>
                         </n-input-group>
                         <br>
                         <br>
                         <n-input-group>
-                            <n-input v-model:value="token" type="password" show-password-on="mousedown"
-                                placeholder="Token" />
+                            <n-input v-model:value="token" @change="handleSetToken" type="password"
+                                show-password-on="click" placeholder="Token" />
                             <n-button tertiary @click="handleSetToken" :loading="tokenLoading">
-                                SET
+                                {{ t('common.set') }}
                             </n-button>
                         </n-input-group>
                         <br>
                         <br>
-                        <n-button :loading="loadingClear" size="small" @click="handleClearAllData">
-                            {{ t('copywriting.clearCache') }}
-                        </n-button>
+                        <n-space>
+                            <n-button :loading="loadingClear" size="small" @click="handleClearAllCache">
+                                {{ t('copywriting.clearCache') }}
+                            </n-button>
+                            <n-button :loading="loadingClear" size="small" @click="handleClearAllData">
+                                {{ t('copywriting.clearData') }}
+                            </n-button>
+                        </n-space>
                         <br>
                         <br>
                         <n-button :loading="updateLoading" size="small" @click="handleUpdate">
@@ -453,7 +472,7 @@ const handleDownloadProject = async () => {
                         <n-space>
                             <n-input-group>
                                 <n-select v-model:value="valueSelectProject" filterable :options="optionsRemoteProject"
-                                    placeholder="加载远程项目" />
+                                    :placeholder="t('copywriting.loadRemote')" />
                                 <n-button secondary @click.stop="handleLoadProject">
                                     {{ t('common.load') }}
                                 </n-button>
