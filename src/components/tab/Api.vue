@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { h, ref, shallowRef, onMounted, onBeforeMount, computed, onBeforeUnmount } from 'vue'
 import {
-    NLayout, NTag, NInputGroup, NButton, NInput, NSpin, NIcon, NModal,
+    NLayout, NTag, NInputGroup, NButton, NInput, NSpin, NIcon, NModal, NPopselect,
     NSelect, NTabs, NTabPane, NDataTable, SelectOption, DataTableColumns,
     NRadioGroup, NSpace, NRadio, NUpload, NPopover, NTable,
 } from 'naive-ui'
-import { Add, Remove, Send, ReloadCircle, CodeWorkingSharp } from '@vicons/ionicons5'
+import { Add, Remove, Send, CloudUpload, CodeWorkingSharp } from '@vicons/ionicons5'
 import AInput from '@/components/AInput.vue'
 import ACheckbox from '@/components/ACheckbox.vue'
 import Item from '@/models/Item'
@@ -20,6 +20,7 @@ import { listen } from '@tauri-apps/api/event'
 import RenderVue from '@/components/Render.vue'
 import renderMd from '@/utils/renderMd'
 import renderCode from '@/utils/renderCode'
+import Environ from '@/models/Environ'
 const { t } = useI18n()
 
 
@@ -45,18 +46,28 @@ const data = ref<any>({
 
 const props = defineProps<{
     item: any
+    project: string
 }>()
 const emits = defineEmits<{
     // (e: 'handle', id: any): void
     (e: 'handleCloseTab', ev: null, id: string): void
 }>()
+const project = ref<any>(null)
 
 const unlisten = ref<any>(null)
 onBeforeMount(async () => {
     height.value = store.config.apiAreaHeight
 
+    let pro = await Project.where({ key: props.project }).get()
+    project.value = pro
+
     let res = await Item.where({ key: props.item }).get()
     data.value = res
+
+    let e = localStorage.getItem(`environ:${props.project}`)
+    if (e) {
+        env.value = e
+    }
 
     data.value.request.body.form = data.value.request.body.form.map((item: any) => {
         item.file = null
@@ -75,7 +86,6 @@ onBeforeMount(async () => {
             obj.save()
         }
     })
-
 })
 
 onBeforeUnmount(() => {
@@ -585,7 +595,17 @@ const href = computed({
 //     immediate: false,
 //     deep: true,
 // })
+
 const handleSend = async () => {
+    let envs: any[] = []
+    let es: any = await Environ.where({ name: env.value }).get()
+    envs = es.environs.map((item: any) => {
+        return {
+            key: item.key,
+            value: item.value
+        }
+    })
+
     let url = new URL(data.value.request.path)
     // let search = data.value.request.query.filter((item: any) => data.value.request.query_keys.includes(item.key)).map((item: any) => {
     //     return `${item.field}=${item.value}`
@@ -593,13 +613,35 @@ const handleSend = async () => {
     let query = data.value.request.query.filter((item: any) => data.value.request.query_keys.includes(item.key)).map((item: any) => {
         return {
             field: item.field,
-            value: item.value
+            value: item.value.replace(/\{\{(.+?)\}\}/g, (...args: any) => {
+                let name: string = args[1]
+                if (name) {
+                    name = name.trim()
+                    let env = envs.find((item) => item.key == name)
+                    if (env) {
+                        return env.value
+                    }
+                    return name
+                }
+                return name
+            })
         }
     })
     let headers = data.value.request.headers.filter((item: any) => data.value.request.headers_keys.includes(item.key)).map((item: any) => {
         return {
             field: item.field,
-            value: item.value
+            value: item.value.replace(/\{\{(.+?)\}\}/g, (...args: any) => {
+                let name: string = args[1]
+                if (name) {
+                    name = name.trim()
+                    let env = envs.find((item) => item.key == name)
+                    if (env) {
+                        return env.value
+                    }
+                    return name
+                }
+                return name
+            })
         }
     })
     if (!headers.some((item: any) => item.field.trim().toLowerCase() === 'content-type')) {
@@ -629,6 +671,19 @@ const handleSend = async () => {
             file: file
         }
     })
+    let str = JSON.stringify(data.value.request.body.json)
+    let json = str.replace(/\{\{(.+?)\}\}/g, (...args: any) => {
+        let name: string = args[1]
+        if (name) {
+            name = name.trim()
+            let env = envs.find((item) => item.key == name)
+            if (env) {
+                return env.value
+            }
+            return name
+        }
+        return name
+    })
     let args: Request = {
         protocol: url.protocol,
         method: data.value.request.method,
@@ -640,7 +695,7 @@ const handleSend = async () => {
         headers: headers,
         body_type: data.value.request.body.type,
         form: form,
-        json: data.value.request.body.json,
+        json: JSON.parse(json),
     }
     showLoading.value = true
     let response = await request(args)
@@ -840,6 +895,22 @@ const handleShowCode = async () => {
 const handleShowVariable = async () => {
     showVariable.value = true
 }
+
+const env = ref('')
+const environs = ref<any[]>([])
+const handleEnvChange = async () => {
+    let envs = await Environ.all()
+    environs.value = envs.map((env: any) => {
+        return {
+            label: env.name,
+            value: env.name,
+            key: env.key
+        }
+    })
+}
+const handleChangeEnv = async (env: string) => {
+    localStorage.setItem(`environ:${props.project}`, env)
+}
 </script>
 
 <template>
@@ -929,15 +1000,17 @@ const handleShowVariable = async () => {
                 <n-input-group>
                     <n-input v-model:value="data.label" placeholder="Label" />
                     <n-input v-model:value="data.request.describe" placeholder="Describe" />
-                    <span>
-                        <n-button secondary @click="handleSync" :loading="loading">
-                            <template #icon>
-                                <n-icon>
-                                    <ReloadCircle />
-                                </n-icon>
-                            </template>
-                        </n-button>
-                    </span>
+                    <n-popselect v-model:value="env" @update:value="handleChangeEnv" :options="environs"
+                        trigger="click">
+                        <n-button secondary @click="handleEnvChange">{{ env || '(No Env)' }}</n-button>
+                    </n-popselect>
+                    <n-button secondary @click="handleSync" :loading="loading">
+                        <template #icon>
+                            <n-icon>
+                                <CloudUpload />
+                            </n-icon>
+                        </template>
+                    </n-button>
                 </n-input-group>
             </div>
             <div class="location">
@@ -1079,7 +1152,7 @@ const handleShowVariable = async () => {
                             </div>
                         </template>
                         <template #suffix>
-                            <div style="padding-right: 10px">
+                            <div style="padding: 0 10px">
                                 <n-tag type="success" v-if="data.response.status >= 200 && data.response.status < 300"
                                     size="small" style="margin-right: 10px">
                                     {{ data.response.status }}&nbsp;{{ data.response.statusText }}

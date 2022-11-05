@@ -93,6 +93,10 @@
     background: #21252b !important;
 }
 
+.n-tabs-nav__suffix {
+    padding: 0 !important;
+}
+
 .n-card {
     background: #333842 !important;
 }

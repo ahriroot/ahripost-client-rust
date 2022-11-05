@@ -5,6 +5,7 @@ import {
     KeyPathField,
     StringField,
     InteagerField,
+    ObjectField,
     BooleanField
 } from 'iorm'
 
@@ -18,7 +19,9 @@ class Project extends BaseModel {
     key = StringField({ verbose_name: '项目唯一 id', nullable: false, unique: true, index: 'name_index', default: '' })
     name = StringField({ verbose_name: '项目名', nullable: false, unique: true, index: 'name_index', default: 'New Project' })
     create_at = InteagerField({ verbose_name: '创建时间', nullable: false, default: 0 })
+    update_at = InteagerField({ verbose_name: '更新时间', nullable: false, default: 0 })
     public = BooleanField({ nullable: false, default: false })
+    environs = ObjectField({ nullable: false, default: [] })
 }
 
 export default Project

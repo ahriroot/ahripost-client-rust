@@ -2,17 +2,19 @@
 import { onBeforeMount, onMounted, shallowRef, ref } from 'vue'
 import {
     darkTheme, NConfigProvider, NGlobalStyle, NIcon, NLayout, NDivider,
-    NButton, NModal, NSelect, NInput, NSpace, NInputGroup,
+    NButton, NModal, NSelect, NInput, NSpace, NInputGroup, NTable,
     NTabs, NTabPane, NLoadingBarProvider, NMessageProvider, NDialogProvider,
     NCheckbox, zhCN, enUS
 } from 'naive-ui'
-import { ArrowForward, Add, CloseOutline, Settings, PersonCircleOutline } from '@vicons/ionicons5'
+import { ArrowForward, Add, SaveOutline, Remove, CloseOutline, Settings, PersonCircleOutline, List } from '@vicons/ionicons5'
 import { invoke } from '@tauri-apps/api/tauri'
 import { useIndexStore } from '@/store'
 import { useI18n } from 'vue-i18n'
 import ProjectVue from '@/components/Project.vue'
 import ApiVue from '@/components/tab/Api.vue'
+import Preload from '@/components/Preload.vue'
 import Project from '@/models/Project'
+import Environ from '@/models/Environ'
 import Item from '@/models/Item'
 import tauriConfig from '../src-tauri/tauri.conf.json'
 import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
@@ -155,14 +157,17 @@ const handleNewProject = async () => {
     project.key = window.crypto.randomUUID()
     project.name = newProjectName.value
     project.create_at = Date.now()
+    project.update_at = 0
+    project.environs = []
     project.save()
     await handleLoadProjects()
     showNewProject.value = false
 }
 
-const handleDeleteProject = async (key: number) => {
+const handleDeleteProject = async (key: string) => {
     let project = projects.value.find((p: any) => p.key == key)
     if (project) {
+        localStorage.removeItem(`expandedKeys:${key}`)
         let items = await Item.where({ project: key }).all() as any[]
         let keys: string[] = []
         for (let i = 0; i < items.length; i++) {
@@ -171,7 +176,8 @@ const handleDeleteProject = async (key: number) => {
                 keys.push(res.key)
             }
         }
-        tabs.value = tabs.value.filter((t: any) => !keys.includes(t.key))
+        tabs.value = tabs.value.filter((t: any) => !keys.includes(t.item))
+        localStorage.setItem('tabs', JSON.stringify(tabs.value))
         await Project.where({ key: key }).delete()
         projects.value = projects.value.filter((item) => item.key != key)
         await handleLoadProjects()
@@ -379,16 +385,78 @@ const handleDownloadProject = async () => {
             window.$message.error('项目已存在')
             return
         }
+        let envs = []
+        try {
+            envs = JSON.parse(download.environs)
+        } catch { }
         let p = new Project()
         p._id = download._id
         p.user = download.user._id
         p.key = download.key
         p.name = download.name
         p.create_at = download.create_at
+        p.update_at = download.update_at
+        p.environs = envs
         p.save()
         await handleLoadProjects()
         showNewProject.value = false
     }
+}
+
+const showEnvirons = ref(false)
+const environs = ref<any[]>([])
+const handleLoadEnvirons = async () => {
+    environs.value = await Environ.all()
+    showEnvirons.value = true
+}
+const handleAddEnviron = async () => {
+    let base = 'New Environ'
+    let newName = 'New Environ'
+    let index = 1
+    while (environs.value.some((item: any) => item.name == newName)) {
+        newName = base + ` (${index})`
+        index++
+    }
+    let e = new Environ()
+    e.name = newName
+    e.key = window.crypto.randomUUID()
+    e.save()
+    await handleLoadEnvirons()
+}
+const handleSaveEnviron = async (environ: any) => {
+    let obj: any = await Environ.where({ key: environ.key }).obj()
+    obj.name = environ.name
+    obj.save()
+    await handleLoadEnvirons()
+}
+const handleRemoveEnviron = async (key: string) => {
+    await Environ.where({ key: key }).delete()
+    await handleLoadEnvirons()
+}
+
+const environ = ref<Environ | any>({})
+const showEnviron = ref(false)
+const handleListEnviron = async (key: string) => {
+    environ.value = environs.value.find((item: any) => item.key == key)
+    showEnviron.value = true
+}
+const handleAddEnv = async () => {
+    environ.value.environs.push({
+        key: '',
+        value: '',
+        describe: ''
+    })
+    await handleSaveEnvironEnv()
+}
+const handleRemoveEnv = async (key: string) => {
+    environ.value.environs = environ.value.environs.filter((item: any) => item.key != key)
+    await handleSaveEnvironEnv()
+}
+const handleSaveEnvironEnv = async (_: boolean = false) => {
+    let obj: any = await Environ.where({ key: environ.value.key }).obj()
+    obj.environs = JSON.parse(JSON.stringify(environ.value.environs))
+    obj.save()
+    await handleLoadEnvirons()
 }
 </script>
 
@@ -398,6 +466,104 @@ const handleDownloadProject = async () => {
         <n-loading-bar-provider>
             <n-message-provider>
                 <n-dialog-provider>
+                    <Preload />
+
+                    <n-modal v-model:show="showEnviron" @update:show="handleSaveEnvironEnv" :mask-closable="false"
+                        preset="card" style="width: 800px;" title="Environment" size="small">
+                        <n-table size="small">
+                            <thead>
+                                <tr>
+                                    <th>Key</th>
+                                    <th>Value</th>
+                                    <th>Describe</th>
+                                    <th>
+                                        <n-button secondary size="small" @click="handleAddEnv">
+                                            <template #icon>
+                                                <n-icon>
+                                                    <Add />
+                                                </n-icon>
+                                            </template>
+                                        </n-button>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="i in environ.environs">
+                                    <td>
+                                        <n-input v-model:value="i.key" placeholder="Key" />
+                                    </td>
+                                    <td>
+                                        <n-input v-model:value="i.value" placeholder="Value" />
+                                    </td>
+                                    <td>
+                                        <n-input v-model:value="i.describe" placeholder="Describe" />
+                                    </td>
+                                    <td>
+                                        <n-button secondary size="small" @click="handleRemoveEnv(i.key)">
+                                            <template #icon>
+                                                <n-icon>
+                                                    <Remove />
+                                                </n-icon>
+                                            </template>
+                                        </n-button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </n-table>
+                    </n-modal>
+
+                    <n-modal v-model:show="showEnvirons" :mask-closable="false" preset="card" style="width: 600px;"
+                        title="Environments" size="small">
+                        <n-table size="small">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>
+                                        <n-button secondary size="small" @click="handleAddEnviron">
+                                            <template #icon>
+                                                <n-icon>
+                                                    <Add />
+                                                </n-icon>
+                                            </template>
+                                        </n-button>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="i in environs">
+                                    <td>
+                                        <n-input v-model:value="i.name" @blur="handleSaveEnviron(i)"
+                                            placeholder="Name" />
+                                    </td>
+                                    <td>
+                                        <n-space>
+                                            <n-button secondary size="small" @click="handleSaveEnviron(i)">
+                                                <template #icon>
+                                                    <n-icon>
+                                                        <SaveOutline />
+                                                    </n-icon>
+                                                </template>
+                                            </n-button>
+                                            <n-button secondary size="small" @click="handleRemoveEnviron(i.key)">
+                                                <template #icon>
+                                                    <n-icon>
+                                                        <Remove />
+                                                    </n-icon>
+                                                </template>
+                                            </n-button>
+                                            <n-button secondary size="small" @click="handleListEnviron(i.key)">
+                                                <template #icon>
+                                                    <n-icon>
+                                                        <List />
+                                                    </n-icon>
+                                                </template>
+                                            </n-button>
+                                        </n-space>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </n-table>
+                    </n-modal>
 
                     <n-modal v-model:show="showUpdateInfo" preset="card" style="width: 600px;"
                         :title="t('update.title')" size="small">
@@ -549,8 +715,18 @@ const handleDownloadProject = async () => {
                                                     </n-button>
                                                 </div>
                                             </template>
-                                            <component :is="tabComs[i.type]" :key="i.id" :item="i.item"></component>
+                                            <component :is="tabComs[i.type]" :key="i.id" :item="i.item"
+                                                :project="i.project"></component>
                                         </n-tab-pane>
+                                        <template #suffix>
+                                            <n-button secondary @click="handleLoadEnvirons">
+                                                <template #icon>
+                                                    <n-icon>
+                                                        <List />
+                                                    </n-icon>
+                                                </template>
+                                            </n-button>
+                                        </template>
                                     </n-tabs>
                                 </section>
                             </div>

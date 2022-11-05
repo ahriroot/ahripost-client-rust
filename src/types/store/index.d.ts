@@ -2,6 +2,7 @@ export interface OpenTabMesagae<T> {
     id: string
     title: string
     type: string
+    project: string
     item: T
 }
 

@@ -1,11 +1,11 @@
 {
-    "version": "v0.1.0",
-    "notes": "New version 0.1.0",
+    "version": "v0.2.0",
+    "notes": "增加环境变量功能, 增加启动屏幕, 修复一些 bug.",
     "pub_date": "2022-11-05T12:00:00Z",
     "platforms": {
         "windows-x86_64": {
             "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRZm41aEIyZkNOWjN0ZS82RFBVL2NtUzVjSDlkT2U4L0ZNWXdCY0tmQ29YMWdEYUN2TmxlQnptVlVtdlFkYUlybHZkNm1DSXhmeE9uQkdBd0pYbGs1cDdONmh0T3ZCYUF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNjY3NDk3MDAwCWZpbGU6QWhyaVBvc3RfMC4xLjBfeDY0X3poLUNOLm1zaS56aXAKRUxaeEl1ZjlqR01BMDVBcE9YVWwxcmE5ZkZVVkJRVDRXWjAyZUEzQzQ0OTZPN2FubWtESjlmOXZ6cDdxOEZoWGxLNDB2Tk1TWjVtTlBsWXVRYjFPQ3c9PQo=",
-            "url": "https://installer.service.ahriknow.com/ahripost/rust/releases/v0.1.0/msi/AhriPost_0.1.0_x64_zh-CN.msi.zip"
+            "url": "https://installer.service.ahriknow.com/ahripost/rust/releases/v0.2.0/msi/AhriPost_0.2.0_x64_zh-CN.msi.zip"
         }
     }
 }

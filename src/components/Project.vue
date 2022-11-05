@@ -168,7 +168,8 @@ const nodeProps = ({ option }: { option: any }): any => {
                     id: option.key,
                     title: option.label,
                     type: 'api',
-                    item: option.value
+                    item: option.value,
+                    project: props.project.key,
                 })
                 showContextmenu.value = false
             }
@@ -363,6 +364,8 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     let formProject = {
                                         key: tmpProject.key,
                                         name: tmpProject.name,
+                                        update_at: tmpProject.update_at || 0,
+                                        environs: JSON.stringify(tmpProject.environs),
                                     }
                                     let sc: any = await sync_check({
                                         data: { apis: formApis, project: formProject },
@@ -371,6 +374,14 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     })
                                     if (sc.error && typeof sc.error == 'string') {
                                         window.$message.error(sc.error)
+                                    }
+                                    if (sc.data.project) {
+                                        let tmpPro: any = await Project.where({ key: sc.data.project.key }).obj()
+                                        if (tmpPro) {
+                                            tmpPro.name = sc.data.project.name
+                                            tmpPro.environs = JSON.parse(sc.data.project.environs)
+                                            await tmpPro.save()
+                                        }
                                     }
                                     for (let i = 0; i < sc.data.keys_delete.length; i++) {
                                         let res: any = await Item.where({ key: sc.data.keys_delete[i] }).delete()
@@ -455,7 +466,8 @@ const nodeProps = ({ option }: { option: any }): any => {
                                         id: option.key,
                                         title: option.label,
                                         type: 'api',
-                                        item: option.value
+                                        item: option.value,
+                                        project: props.project.key
                                     })
                                     showContextmenu.value = false
                                 }

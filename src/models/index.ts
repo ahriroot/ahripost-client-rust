@@ -1,10 +1,11 @@
 import { DB, init } from 'iorm'
-import Item from './item'
-import Project from './project'
+import Item from './Item'
+import Project from './Project'
+import Environ from './Environ'
 
 const create = async (): Promise<number> => {
     let count = await init({
-        models: [Item, Project],
+        models: [Item, Project, Environ],
     })
     return count
 }
