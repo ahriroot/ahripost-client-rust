@@ -2,6 +2,7 @@ import { InvokeArgs } from "@tauri-apps/api/tauri"
 
 
 export interface Request extends InvokeArgs {
+    error?: string
     protocol: string
     method: string
     host: string
@@ -26,6 +27,7 @@ export interface Request extends InvokeArgs {
 }
 
 export interface Response {
+[x: string]: Response
     body: string
     canonical_reason: string
     headers: any[]

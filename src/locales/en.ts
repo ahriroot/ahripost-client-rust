@@ -49,6 +49,11 @@ const en = {
         apiDatetime: 'Request Datetime',
         reqDetail: 'Request Detail',
         resDetail: 'Response Detail',
+        environment: 'Environment',
+        envName: 'Environment Name',
+        envKey: 'Environment Key',
+        envValue: 'Environment Value',
+        envDescribe: 'Environment Describe',
     }
 }
 

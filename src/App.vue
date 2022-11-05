@@ -2,7 +2,7 @@
 import { onBeforeMount, onMounted, shallowRef, ref } from 'vue'
 import {
     darkTheme, NConfigProvider, NGlobalStyle, NIcon, NLayout, NDivider,
-    NButton, NModal, NSelect, NInput, NSpace, NInputGroup, NTable,
+    NButton, NModal, NSelect, NInput, NSpace, NInputGroup, NTable, NSpin,
     NTabs, NTabPane, NLoadingBarProvider, NMessageProvider, NDialogProvider,
     NCheckbox, zhCN, enUS
 } from 'naive-ui'
@@ -185,6 +185,7 @@ const handleDeleteProject = async (key: string) => {
 }
 
 onBeforeMount(async () => {
+    // document.getElementsByTagName('body')[0].style.zoom = 1.4;
     await create()
     try {
         let config = localStorage.getItem('config')
@@ -452,11 +453,14 @@ const handleRemoveEnv = async (key: string) => {
     environ.value.environs = environ.value.environs.filter((item: any) => item.key != key)
     await handleSaveEnvironEnv()
 }
+const showSaveEnv = ref(false)
 const handleSaveEnvironEnv = async (_: boolean = false) => {
+    showSaveEnv.value = true
     let obj: any = await Environ.where({ key: environ.value.key }).obj()
     obj.environs = JSON.parse(JSON.stringify(environ.value.environs))
     obj.save()
     await handleLoadEnvirons()
+    showSaveEnv.value = false
 }
 </script>
 
@@ -469,55 +473,57 @@ const handleSaveEnvironEnv = async (_: boolean = false) => {
                     <Preload />
 
                     <n-modal v-model:show="showEnviron" @update:show="handleSaveEnvironEnv" :mask-closable="false"
-                        preset="card" style="width: 800px;" title="Environment" size="small">
-                        <n-table size="small">
-                            <thead>
-                                <tr>
-                                    <th>Key</th>
-                                    <th>Value</th>
-                                    <th>Describe</th>
-                                    <th>
-                                        <n-button secondary size="small" @click="handleAddEnv">
-                                            <template #icon>
-                                                <n-icon>
-                                                    <Add />
-                                                </n-icon>
-                                            </template>
-                                        </n-button>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="i in environ.environs">
-                                    <td>
-                                        <n-input v-model:value="i.key" placeholder="Key" />
-                                    </td>
-                                    <td>
-                                        <n-input v-model:value="i.value" placeholder="Value" />
-                                    </td>
-                                    <td>
-                                        <n-input v-model:value="i.describe" placeholder="Describe" />
-                                    </td>
-                                    <td>
-                                        <n-button secondary size="small" @click="handleRemoveEnv(i.key)">
-                                            <template #icon>
-                                                <n-icon>
-                                                    <Remove />
-                                                </n-icon>
-                                            </template>
-                                        </n-button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </n-table>
+                        preset="card" style="width: 800px;" :title="environ.name" size="small">
+                        <n-spin :show="showSaveEnv">
+                            <n-table size="small">
+                                <thead>
+                                    <tr>
+                                        <th>{{ t('copywriting.envKey') }}</th>
+                                        <th>{{ t('copywriting.envValue') }}</th>
+                                        <th>{{ t('copywriting.envDescribe') }}</th>
+                                        <th>
+                                            <n-button secondary size="small" @click="handleAddEnv">
+                                                <template #icon>
+                                                    <n-icon>
+                                                        <Add />
+                                                    </n-icon>
+                                                </template>
+                                            </n-button>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="i in environ.environs">
+                                        <td>
+                                            <n-input v-model:value="i.key" placeholder="Key" />
+                                        </td>
+                                        <td>
+                                            <n-input v-model:value="i.value" placeholder="Value" />
+                                        </td>
+                                        <td>
+                                            <n-input v-model:value="i.describe" placeholder="Describe" />
+                                        </td>
+                                        <td>
+                                            <n-button secondary size="small" @click="handleRemoveEnv(i.key)">
+                                                <template #icon>
+                                                    <n-icon>
+                                                        <Remove />
+                                                    </n-icon>
+                                                </template>
+                                            </n-button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </n-table>
+                        </n-spin>
                     </n-modal>
 
                     <n-modal v-model:show="showEnvirons" :mask-closable="false" preset="card" style="width: 600px;"
-                        title="Environments" size="small">
+                        :title="t('copywriting.environment')" size="small">
                         <n-table size="small">
                             <thead>
                                 <tr>
-                                    <th>Name</th>
+                                    <th>{{ t('copywriting.envName') }}</th>
                                     <th>
                                         <n-button secondary size="small" @click="handleAddEnviron">
                                             <template #icon>

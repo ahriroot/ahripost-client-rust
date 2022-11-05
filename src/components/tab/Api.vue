@@ -597,6 +597,8 @@ const href = computed({
 // })
 
 const handleSend = async () => {
+    showLoading.value = true
+
     let envs: any[] = []
     let es: any = await Environ.where({ name: env.value }).get()
     envs = es.environs.map((item: any) => {
@@ -606,7 +608,20 @@ const handleSend = async () => {
         }
     })
 
-    let url = new URL(data.value.request.path)
+    let strPath = data.value.request.path.replace(/\{\{(.+?)\}\}/g, (...args: any) => {
+        let name: string = args[1]
+        if (name) {
+            name = name.trim()
+            let env = envs.find((item) => item.key == name)
+            if (env) {
+                return env.value
+            }
+            return name
+        }
+        return name
+    })
+
+    let url = new URL(strPath)
     // let search = data.value.request.query.filter((item: any) => data.value.request.query_keys.includes(item.key)).map((item: any) => {
     //     return `${item.field}=${item.value}`
     // }).join('&')
@@ -697,35 +712,43 @@ const handleSend = async () => {
         form: form,
         json: JSON.parse(json),
     }
-    showLoading.value = true
-    let response = await request(args)
-    showLoading.value = false
 
-    data.value.response.status = response.status
-    data.value.response.statusText = response.canonical_reason
-    data.value.response.headers = response.headers
+    let response = await request(args)
+
     data.value.response.tab = 'body'
     data.value.response.datetime = new Date().getTime()
 
-    let contentType = response.headers.find((item: any) => item.field.toLowerCase() === 'content-type')
-    if (contentType) {
-        if (contentType.value.includes('application/json')) {
-            data.value.response.body.type = 'pretty'
-            data.value.response.body.json = response.body
-        } else if (contentType.value.includes('text/html')) {
-            data.value.response.body.type = 'preview'
-            data.value.response.body.html = response.body
+    if (response && response.error) {
+        data.value.response.status = -1
+        data.value.response.statusText = 'Error'
+        data.value.response.headers = []
+        data.value.response.body.type = 'raw'
+        data.value.response.body.text = response.error
+    } else {
+        data.value.response.status = response.status
+        data.value.response.statusText = response.canonical_reason
+        data.value.response.headers = response.headers
+
+        let contentType = response?.headers.find((item: any) => item.field.toLowerCase() === 'content-type')
+        if (contentType) {
+            if (contentType.value.includes('application/json')) {
+                data.value.response.body.type = 'pretty'
+                data.value.response.body.json = response.body
+
+                if (responseRef.value && data.value.response?.body) {
+                    responseRef.value.setValue(response.body || '')
+                }
+            } else if (contentType.value.includes('text/html')) {
+                data.value.response.body.type = 'preview'
+                data.value.response.body.html = response.body
+            } else {
+                data.value.response.body.type = 'raw'
+                data.value.response.body.text = response.body
+            }
         } else {
             data.value.response.body.type = 'raw'
             data.value.response.body.text = response.body
         }
-    } else {
-        data.value.response.body.type = 'raw'
-        data.value.response.body.text = response.body
-    }
-
-    if (responseRef.value && data.value.response?.body) {
-        responseRef.value.setValue(response.body || '')
     }
 
     let obj: any = await Item.where({ key: props.item }).obj()
@@ -735,7 +758,9 @@ const handleSend = async () => {
     obj.tag = false
     obj.client = store.config.client
     obj.save()
+    showLoading.value = false
 }
+
 const handleChangeType = (_: string) => {
     requestRef.value.setValue(data.value.request.body.json || '')
 }

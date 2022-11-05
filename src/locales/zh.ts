@@ -49,6 +49,11 @@ const zh = {
         apiDatetime: '示例请求时间',
         reqDetail: '请求详情',
         resDetail: '响应结果',
+        environment: '环境变量',
+        envName: '环境变量名',
+        envKey: '环境变量 Key',
+        envValue: '环境变量 Value',
+        envDescribe: '环境变量描述',
     }
 }
 
