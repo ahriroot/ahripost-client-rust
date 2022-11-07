@@ -68,6 +68,7 @@ onBeforeMount(async () => {
     if (e) {
         env.value = e
     }
+    await handleEnvChange()
 
     data.value.request.body.form = data.value.request.body.form.map((item: any) => {
         item.file = null
@@ -84,6 +85,12 @@ onBeforeMount(async () => {
             obj.tag = false
             obj.client = store.config.client
             obj.save()
+            let tmpEnv = environs.value.find((envs: any) => envs.label == e)
+            let objProject: any = await Project.where({ key: props.project }).obj()
+            if (tmpEnv && objProject) {
+                objProject.environs = JSON.parse(JSON.stringify(tmpEnv.data))
+                objProject.save()
+            }
         }
     })
 })
@@ -929,7 +936,8 @@ const handleEnvChange = async () => {
         return {
             label: env.name,
             value: env.name,
-            key: env.key
+            key: env.key,
+            data: env
         }
     })
 }
