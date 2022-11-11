@@ -12,7 +12,6 @@ import { useIndexStore } from '@/store'
 import { OpenTabMesagae } from '@/types/store'
 import Project from '@/models/Project'
 import { delete_api, sync_check, sync_data } from '@/net/http'
-import { emit } from 'process'
 
 window.$message = useMessage()
 const store = useIndexStore()
@@ -360,7 +359,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                             last_sync: item.last_sync,
                                         })
                                     })
-                                    let tmpProject: any = await Project.where({ key: props.project.key }).get()
+                                    let tmpProject: any = await Project.where({ key: props.project.key }).json()
                                     let formProject = {
                                         key: tmpProject.key,
                                         name: tmpProject.name,
@@ -391,7 +390,7 @@ const nodeProps = ({ option }: { option: any }): any => {
                                     }
                                     let items_upload: any[] = []
                                     for (let i = 0; i < sc.data.items_upload.length; i++) {
-                                        let api: any = await Item.where({ key: sc.data.items_upload[i] }).get()
+                                        let api: any = await Item.where({ key: sc.data.items_upload[i] }).json()
                                         if (api && api.key) {
                                             api.request = JSON.stringify(api.request)
                                             api.response = JSON.stringify(api.response)

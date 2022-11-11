@@ -58,10 +58,10 @@ const unlisten = ref<any>(null)
 onBeforeMount(async () => {
     height.value = store.config.apiAreaHeight
 
-    let pro = await Project.where({ key: props.project }).get()
+    let pro = await Project.where({ key: props.project }).json()
     project.value = pro
 
-    let res = await Item.where({ key: props.item }).get()
+    let res = await Item.where({ key: props.item }).json()
     data.value = res
 
     let e = localStorage.getItem(`environ:${props.project}`)
@@ -607,7 +607,7 @@ const handleSend = async () => {
     showLoading.value = true
 
     let envs: any[] = []
-    let es: any = await Environ.where({ name: env.value }).get()
+    let es: any = await Environ.where({ name: env.value }).json()
     envs = es.environs.map((item: any) => {
         return {
             key: item.key,
@@ -846,16 +846,16 @@ const handleSync = async () => {
         obj.save()
 
         let ids: string[] = []
-        let item: any = await Item.where({ key: props.item }).get()
+        let item: any = await Item.where({ key: props.item }).json()
         ids.unshift(item.key)
 
         while (item.parent) {
-            item = await Item.where({ key: item.parent }).get()
+            item = await Item.where({ key: item.parent }).json()
             ids.unshift(item.key)
         }
         let apis: any[] = []
         for (let i = 0; i < ids.length; i++) {
-            let api: any = await Item.where({ key: ids[i] }).get()
+            let api: any = await Item.where({ key: ids[i] }).json()
             api.request = JSON.stringify(api.request)
             api.response = JSON.stringify(api.response)
             apis.push(api)
@@ -869,7 +869,7 @@ const handleSync = async () => {
                     host
                 })
             }
-            let project: any = await Project.where({ key: apis[0].project }).get()
+            let project: any = await Project.where({ key: apis[0].project }).json()
             let res: any = await sync_api({
                 data: { apis: apis, project: project },
                 server: host,

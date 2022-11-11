@@ -381,7 +381,7 @@ const handleLoadProject = async () => {
 const handleDownloadProject = async () => {
     let download = remoteProjects.value.find((item: any) => item._id == valueSelectProject.value)
     if (download) {
-        let has: any = await Project.where({ key: download.key }).get()
+        let has: any = await Project.where({ key: download.key }).json()
         if (has && has.key) {
             window.$message.error('项目已存在')
             return
